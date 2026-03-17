@@ -18,13 +18,19 @@ export default function SalesHistoryPage() {
 
   const load = () =>
     api
-      .get('/sales', { params: { filter, from: filter === 'custom' ? from : undefined, to: filter === 'custom' ? to : undefined } })
+      .get('/sales', {
+        params: {
+          filter,
+          from: filter === 'custom' ? from : undefined,
+          to: filter === 'custom' ? to : undefined,
+        },
+      })
       .then((r) => setSales(r.data?.data || []))
       .catch((e) => setToast(getErrorMessage(e)))
 
   useEffect(() => {
     load()
-  }, [filter])
+  }, [filter, setToast])
 
   const rows = useMemo(() => {
     const out = []
@@ -47,61 +53,83 @@ export default function SalesHistoryPage() {
   }, [sales])
 
   return (
-    <div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+    <div className="page">
+      <header className="pageHeader">
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Sales History</div>
-          <div className="muted">Filter by date range</div>
+          <h1 className="pageTitle">Sales History</h1>
+          <p className="pageSubtitle">Filter by date range</p>
         </div>
-        <div className="row">
-          <select className="select" style={{ maxWidth: 180 }} value={filter} onChange={(e) => setFilter(e.target.value)}>
+        <div className="filterRow">
+          <select
+            className="select selectSm"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            aria-label="Date filter"
+          >
             <option value="today">Today</option>
             <option value="week">This Week</option>
             <option value="month">This Month</option>
-            <option value="custom">Custom</option>
+            <option value="custom">Custom range</option>
           </select>
           {filter === 'custom' && (
             <>
-              <input className="input" style={{ maxWidth: 160 }} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-              <input className="input" style={{ maxWidth: 160 }} type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+              <input
+                className="input inputSm"
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                aria-label="From date"
+              />
+              <input
+                className="input inputSm"
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                aria-label="To date"
+              />
             </>
           )}
-          <button className="btn" onClick={load}>Apply</button>
+          <button className="btn" onClick={load}>
+            Apply
+          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Item</th>
-              <th>Category</th>
-              <th>Qty</th>
-              <th>Selling</th>
-              <th>Profit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td className="muted">{r.soldAt.toLocaleString()}</td>
-                <td>{r.item}</td>
-                <td className="muted">{r.category}</td>
-                <td>{r.qty}</td>
-                <td>{money(r.selling)}</td>
-                <td className="muted">{money(r.profit)}</td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
+      <section className="card cardSection">
+        <div className="tableWrap">
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan="6" className="muted">No sales found</td>
+                <th>Date</th>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Qty</th>
+                <th>Selling</th>
+                <th>Profit</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td className="muted">{r.soldAt.toLocaleString()}</td>
+                  <td>{r.item}</td>
+                  <td className="muted">{r.category}</td>
+                  <td>{r.qty}</td>
+                  <td>{money(r.selling)}</td>
+                  <td className="muted">{money(r.profit)}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="emptyCell">
+                    No sales found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   )
 }
-

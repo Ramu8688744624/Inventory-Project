@@ -21,7 +21,11 @@ export default function ProfitReportsPage() {
 
   const load = async () => {
     try {
-      const params = { filter, from: filter === 'custom' ? from : undefined, to: filter === 'custom' ? to : undefined }
+      const params = {
+        filter,
+        from: filter === 'custom' ? from : undefined,
+        to: filter === 'custom' ? to : undefined,
+      }
       const [s, c, i] = await Promise.all([
         api.get('/reports/profit/summary', { params }),
         api.get('/reports/profit/by-category', { params }),
@@ -37,114 +41,146 @@ export default function ProfitReportsPage() {
 
   useEffect(() => {
     load()
-  }, [filter])
+  }, [filter, setToast])
 
   return (
-    <div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+    <div className="page">
+      <header className="pageHeader">
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Profit Reports</div>
-          <div className="muted">Sales profit + service profit</div>
+          <h1 className="pageTitle">Profit Reports</h1>
+          <p className="pageSubtitle">Sales profit + service profit</p>
         </div>
-        <div className="row">
-          <select className="select" style={{ maxWidth: 180 }} value={filter} onChange={(e) => setFilter(e.target.value)}>
+        <div className="filterRow">
+          <select
+            className="select selectSm"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            aria-label="Date filter"
+          >
             <option value="today">Today</option>
             <option value="week">This Week</option>
             <option value="month">This Month</option>
-            <option value="custom">Custom</option>
+            <option value="custom">Custom range</option>
           </select>
           {filter === 'custom' && (
             <>
-              <input className="input" style={{ maxWidth: 160 }} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-              <input className="input" style={{ maxWidth: 160 }} type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+              <input
+                className="input inputSm"
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                aria-label="From date"
+              />
+              <input
+                className="input inputSm"
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                aria-label="To date"
+              />
             </>
           )}
-          <button className="btn" onClick={load}>Apply</button>
+          <button className="btn" onClick={load}>
+            Apply
+          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="grid3">
-        <div className="card">
+      <section className="grid3" aria-label="Profit summary">
+        <div className="card cardSection">
           <div className="cardTitle">Sales Profit</div>
-          <div style={{ fontSize: 22, fontWeight: 800 }}>{money(summary?.sales_profit)}</div>
-          <div className="muted">From product sales</div>
+          <div className="statValue">{money(summary?.sales_profit)}</div>
+          <p className="muted" style={{ margin: 0, fontSize: '0.9375rem' }}>
+            From product sales
+          </p>
         </div>
-        <div className="card">
+        <div className="card cardSection">
           <div className="cardTitle">Service Profit</div>
-          <div style={{ fontSize: 22, fontWeight: 800 }}>{money(summary?.service_profit)}</div>
-          <div className="muted">Service income (100% profit)</div>
+          <div className="statValue">{money(summary?.service_profit)}</div>
+          <p className="muted" style={{ margin: 0, fontSize: '0.9375rem' }}>
+            Service income (100% profit)
+          </p>
         </div>
-        <div className="card">
+        <div className="card cardSection">
           <div className="cardTitle">Total Profit</div>
-          <div style={{ fontSize: 22, fontWeight: 800 }}>{money(summary?.total_profit)}</div>
-          <div className="muted">Combined</div>
+          <div className="statValue">{money(summary?.total_profit)}</div>
+          <p className="muted" style={{ margin: 0, fontSize: '0.9375rem' }}>
+            Combined
+          </p>
         </div>
-      </div>
+      </section>
 
-      <div style={{ height: 12 }} />
+      <div className="sectionGap" />
 
-      <div className="grid2">
-        <div className="card">
+      <section className="grid2" aria-label="Category and item profit">
+        <div className="card cardSection">
           <div className="cardTitle">Category-wise Profit</div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th>Qty</th>
-                <th>Sales</th>
-                <th>Profit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {byCategory.map((r) => (
-                <tr key={r.category_id}>
-                  <td>{r.category_name}</td>
-                  <td className="muted">{r.quantity}</td>
-                  <td>{money(r.sales)}</td>
-                  <td className="muted">{money(r.profit)}</td>
-                </tr>
-              ))}
-              {byCategory.length === 0 && (
+          <div className="tableWrap">
+            <table className="table">
+              <thead>
                 <tr>
-                  <td colSpan="4" className="muted">No data</td>
+                  <th>Category</th>
+                  <th>Qty</th>
+                  <th>Sales</th>
+                  <th>Profit</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {byCategory.map((r) => (
+                  <tr key={r.category_id}>
+                    <td>{r.category_name}</td>
+                    <td className="muted">{r.quantity}</td>
+                    <td>{money(r.sales)}</td>
+                    <td className="muted">{money(r.profit)}</td>
+                  </tr>
+                ))}
+                {byCategory.length === 0 && (
+                  <tr>
+                    <td colSpan="4" className="emptyCell">
+                      No data
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="card">
+        <div className="card cardSection">
           <div className="cardTitle">Item-wise Profit (Top)</div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Qty</th>
-                <th>Sales</th>
-                <th>Profit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {byItem.map((r) => (
-                <tr key={r.item_id}>
-                  <td>
-                    {r.item_name} <span className="muted">{r.model}</span>
-                  </td>
-                  <td className="muted">{r.quantity}</td>
-                  <td>{money(r.sales)}</td>
-                  <td className="muted">{money(r.profit)}</td>
-                </tr>
-              ))}
-              {byItem.length === 0 && (
+          <div className="tableWrap">
+            <table className="table">
+              <thead>
                 <tr>
-                  <td colSpan="4" className="muted">No data</td>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Sales</th>
+                  <th>Profit</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {byItem.map((r) => (
+                  <tr key={r.item_id}>
+                    <td>
+                      {r.item_name} <span className="muted">{r.model}</span>
+                    </td>
+                    <td className="muted">{r.quantity}</td>
+                    <td>{money(r.sales)}</td>
+                    <td className="muted">{money(r.profit)}</td>
+                  </tr>
+                ))}
+                {byItem.length === 0 && (
+                  <tr>
+                    <td colSpan="4" className="emptyCell">
+                      No data
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   )
 }
-

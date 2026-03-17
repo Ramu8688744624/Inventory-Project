@@ -118,31 +118,32 @@ export default function SalesPosPage() {
   }
 
   return (
-    <div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+    <div className="page">
+      <header className="pageHeader">
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Sales POS</div>
-          <div className="muted">Search → select → qty → price (optional discount) → save</div>
+          <h1 className="pageTitle">Sales POS</h1>
+          <p className="pageSubtitle">Search → select → qty → price (optional discount) → save</p>
         </div>
-        <div className="row">
+        <div className="actionGroup">
           <span className="pill">Total: {money(totals.total)}</span>
           <span className="pill pillOk">Profit: {money(totals.profit)}</span>
           <button className="btn btnPrimary" onClick={submit} disabled={saving || cart.length === 0}>
             Save Sale
           </button>
         </div>
-      </div>
+      </header>
 
       <div className="grid2">
-        <div className="card">
-          <div className="cardTitle">1) Search Item</div>
+        <section className="card cardSection">
+          <h2 className="cardTitle">1) Search item</h2>
           <input
             className="input"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Type item name or model"
+            aria-label="Search items"
           />
-          <div style={{ height: 10 }} />
+          <div className="tableWrap" style={{ marginTop: 12 }}>
           <table className="table">
             <thead>
               <tr>
@@ -156,7 +157,7 @@ export default function SalesPosPage() {
               {results.map((it) => (
                 <tr
                   key={it.id}
-                  style={{ cursor: 'pointer' }}
+                  className="tableRowClickable"
                   onClick={() => {
                     setSelected(it)
                     setPrice(String(it.selling_price))
@@ -171,68 +172,59 @@ export default function SalesPosPage() {
               ))}
               {search.trim() && results.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="muted">
+                  <td colSpan="4" className="emptyCell">
                     No results
                   </td>
                 </tr>
               )}
               {!search.trim() && (
                 <tr>
-                  <td colSpan="4" className="muted">
+                  <td colSpan="4" className="emptyCell">
                     Start typing to search
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
-        </div>
+          </div>
+        </section>
 
-        <div className="card">
-          <div className="cardTitle">2) Add to Bill</div>
-          {!selected && <div className="muted">Select an item from the left.</div>}
+        <section className="card cardSection">
+          <h2 className="cardTitle">2) Add to bill</h2>
+          {!selected && <p className="muted">Select an item from the left.</p>}
           {selected && (
             <>
-              <div className="row" style={{ justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontWeight: 800 }}>
-                    {selected.item_name}{' '}
-                    <span className="muted" style={{ fontWeight: 600 }}>
-                      {selected.model}
-                    </span>
-                  </div>
-                  <div className="muted" style={{ fontSize: 12 }}>
-                    Stock: {selected.quantity} • Cost: {money(selected.cost_price)} • Default selling:{' '}
-                    {money(selected.selling_price)}
-                  </div>
-                </div>
+              <div className="posSelectedInfo">
+                <strong>
+                  {selected.item_name} <span className="muted">{selected.model}</span>
+                </strong>
+                <p className="muted" style={{ margin: '4px 0 0 0', fontSize: '0.9375rem' }}>
+                  Stock: {selected.quantity} • Cost: {money(selected.cost_price)} • Default: {money(selected.selling_price)}
+                </p>
               </div>
 
-              <div style={{ height: 10 }} />
-
-              <div className="grid3">
-                <div>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    Quantity
-                  </div>
+              <div className="formGrid formGrid3" style={{ marginTop: 16 }}>
+                <div className="formField">
+                  <label className="formLabel" htmlFor="pos-qty">Quantity</label>
                   <input
+                    id="pos-qty"
                     className="input"
                     value={qty}
                     onChange={(e) => setQty(e.target.value)}
                     inputMode="numeric"
                   />
                 </div>
-                <div>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    Selling price (optional discount)
-                  </div>
+                <div className="formField">
+                  <label className="formLabel" htmlFor="pos-price">Selling price (optional discount)</label>
                   <input
+                    id="pos-price"
                     className="input"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     inputMode="decimal"
                   />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'end' }}>
+                <div className="formField" style={{ display: 'flex', alignItems: 'flex-end' }}>
                   <button className="btn btnPrimary" onClick={addToCart}>
                     Add
                   </button>
@@ -241,9 +233,8 @@ export default function SalesPosPage() {
             </>
           )}
 
-          <div style={{ height: 12 }} />
-
-          <div className="cardTitle">Current Bill</div>
+          <div className="cardTitle" style={{ marginTop: 16 }}>Current bill</div>
+          <div className="tableWrap">
           <table className="table">
             <thead>
               <tr>
@@ -270,7 +261,7 @@ export default function SalesPosPage() {
                     <td className="muted">{money(lineProfit)}</td>
                     <td>
                       <button
-                        className="btn btnDanger"
+                        className="btn btnSm btnDanger"
                         onClick={() => setCart((p) => p.filter((_, i) => i !== idx))}
                       >
                         Remove
@@ -281,14 +272,15 @@ export default function SalesPosPage() {
               })}
               {cart.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="muted">
+                  <td colSpan="6" className="emptyCell">
                     No items added
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
-        </div>
+          </div>
+        </section>
       </div>
     </div>
   )

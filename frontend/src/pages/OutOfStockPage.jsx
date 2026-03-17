@@ -14,44 +14,49 @@ export default function OutOfStockPage() {
 
   useEffect(() => {
     load()
-  }, [])
+  }, [setToast])
 
   return (
-    <div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+    <div className="page">
+      <header className="pageHeader">
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Out of Stock</div>
-          <div className="muted">Items where quantity = 0</div>
+          <h1 className="pageTitle">Out of Stock</h1>
+          <p className="pageSubtitle">Items where quantity = 0</p>
         </div>
-        <button className="btn" onClick={load}>Refresh</button>
-      </div>
+        <button className="btn" onClick={load}>
+          Refresh
+        </button>
+      </header>
 
-      <div className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Model</th>
-              <th>Category</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((it) => (
-              <tr key={it.id}>
-                <td>{it.item_name}</td>
-                <td className="muted">{it.model}</td>
-                <td className="muted">{it.category?.name}</td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
+      <section className="card cardSection">
+        <div className="tableWrap">
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan="3" className="muted">No out of stock items</td>
+                <th>Item</th>
+                <th>Model</th>
+                <th>Category</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((it) => (
+                <tr key={it.id}>
+                  <td>{it.item_name}</td>
+                  <td className="muted">{it.model}</td>
+                  <td className="muted">{it.category?.name}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan="3" className="emptyCell">
+                    No out of stock items
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   )
 }
-

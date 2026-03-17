@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, getErrorMessage } from '../services/api'
 import { useToast } from '../components/useToast'
+import ConfirmDialog from '../components/ConfirmDialog'
+import PromptDialog from '../components/PromptDialog'
 
 export default function CategoriesPage() {
   const setToast = useToast()
   const [categories, setCategories] = useState([])
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const [confirmState, setConfirmState] = useState({ open: false, cat: null })
+  const [promptState, setPromptState] = useState({ open: false, cat: null, value: '' })
 
   const load = () =>
     api
@@ -36,13 +41,14 @@ export default function CategoriesPage() {
     }
   }
 
-  const rename = async (cat) => {
-    const n = window.prompt('New category name', cat.name)
-    if (n === null) return
-    const trimmed = n.trim()
-    if (!trimmed) return
+  const rename = (cat) => {
+    setPromptState({ open: true, cat, value: cat.name })
+  }
+
+  const handleRenameSubmit = async (trimmed) => {
+    if (!trimmed || !promptState.cat) return
     try {
-      await api.put(`/categories/${cat.id}`, { name: trimmed })
+      await api.put(`/categories/${promptState.cat.id}`, { name: trimmed })
       await load()
       setToast('Category updated')
     } catch (e) {
@@ -50,10 +56,14 @@ export default function CategoriesPage() {
     }
   }
 
-  const remove = async (cat) => {
-    if (!window.confirm(`Delete category "${cat.name}"?`)) return
+  const remove = (cat) => {
+    setConfirmState({ open: true, cat })
+  }
+
+  const handleRemoveConfirm = async () => {
+    if (!confirmState.cat) return
     try {
-      await api.delete(`/categories/${cat.id}`)
+      await api.delete(`/categories/${confirmState.cat.id}`)
       await load()
       setToast('Category deleted')
     } catch (e) {
@@ -62,69 +72,87 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+    <div className="page">
+      <header className="pageHeader">
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Categories</div>
-          <div className="muted">Create, edit, delete categories</div>
+          <h1 className="pageTitle">Categories</h1>
+          <p className="pageSubtitle">Create, edit, delete categories</p>
         </div>
-      </div>
+      </header>
 
-      <div className="card">
-        <div className="row">
+      <section className="card cardSection">
+        <h2 className="srOnly">Add category</h2>
+        <div className="formRow">
           <input
-            className="input"
-            style={{ maxWidth: 360 }}
+            className="input inputMd"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="New category name"
+            aria-label="New category name"
           />
           <button className="btn btnPrimary" onClick={add} disabled={saving}>
             Add
           </button>
         </div>
-      </div>
+      </section>
 
-      <div style={{ height: 12 }} />
-
-      <div className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th style={{ width: 220 }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((c) => (
-              <tr key={c.id}>
-                <td>{c.name}</td>
-                <td>
-                  <div className="row">
-                    <button className="btn" onClick={() => rename(c)}>
-                      Edit
-                    </button>
-                    <button className="btn btnDanger" onClick={() => remove(c)}>
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {sorted.length === 0 && (
+      <section className="card cardSection">
+        <h2 className="cardTitle">Category list</h2>
+        <div className="tableWrap">
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan="2" className="muted">
-                  No categories yet
-                </td>
+                <th>Name</th>
+                <th className="colActions">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-        <div className="muted" style={{ marginTop: 10, fontSize: 12 }}>
-          Note: A category cannot be deleted if items exist in it.
+            </thead>
+            <tbody>
+              {sorted.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.name}</td>
+                  <td>
+                    <div className="actionGroup">
+                      <button className="btn btnSm" onClick={() => rename(c)} aria-label={`Edit ${c.name}`}>
+                        Edit
+                      </button>
+                      <button className="btn btnSm btnDanger" onClick={() => remove(c)} aria-label={`Delete ${c.name}`}>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {sorted.length === 0 && (
+                <tr>
+                  <td colSpan="2" className="emptyCell">
+                    No categories yet
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      </div>
+        <p className="cardNote">A category cannot be deleted if items exist in it.</p>
+      </section>
+
+      <PromptDialog
+        open={promptState.open}
+        title="Edit category name"
+        label="New name"
+        defaultValue={promptState.value}
+        submitLabel="Save"
+        onSubmit={handleRenameSubmit}
+        onCancel={() => setPromptState({ open: false, cat: null, value: '' })}
+      />
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title="Delete category"
+        message={`Delete category "${confirmState.cat?.name}"?`}
+        confirmLabel="Delete"
+        onConfirm={handleRemoveConfirm}
+        onCancel={() => setConfirmState({ open: false, cat: null })}
+      />
     </div>
   )
 }
-

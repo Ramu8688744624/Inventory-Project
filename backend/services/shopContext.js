@@ -1,9 +1,21 @@
-function getShopId(req) {
-  const header = req.header('x-shop-id');
-  const shopId = header ? Number(header) : Number(process.env.SHOP_ID || 1);
-  if (!Number.isFinite(shopId) || shopId <= 0) return 1;
-  return shopId;
+let cachedDefaultShopId = null;
+
+function setDefaultShopId(id) {
+  const numeric = Number(id);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    cachedDefaultShopId = numeric;
+  }
 }
 
-module.exports = { getShopId };
+function getShopId(req) {
+  const header = req?.header?.('x-shop-id');
+  const fromHeader = header ? Number(header) : NaN;
+  if (Number.isFinite(fromHeader) && fromHeader > 0) return fromHeader;
+
+  const fromEnv = Number(process.env.SHOP_ID || cachedDefaultShopId || 1);
+  if (!Number.isFinite(fromEnv) || fromEnv <= 0) return 1;
+  return fromEnv;
+}
+
+module.exports = { getShopId, setDefaultShopId };
 

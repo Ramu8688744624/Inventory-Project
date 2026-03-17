@@ -4,6 +4,21 @@ import { api, getErrorMessage } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
 import Toast from './Toast'
 
+function useClickOutside(ref, handler) {
+  useEffect(() => {
+    const listener = (e) => {
+      if (!ref.current || ref.current.contains(e.target)) return
+      handler(e)
+    }
+    document.addEventListener('mousedown', listener)
+    document.addEventListener('touchstart', listener)
+    return () => {
+      document.removeEventListener('mousedown', listener)
+      document.removeEventListener('touchstart', listener)
+    }
+  }, [ref, handler])
+}
+
 function useDebounced(value, delayMs) {
   const [debounced, setDebounced] = useState(value)
   useEffect(() => {
@@ -22,6 +37,8 @@ export default function AppLayout() {
   const [results, setResults] = useState([])
   const [searchOpen, setSearchOpen] = useState(false)
   const activeReq = useRef(0)
+  const searchRef = useRef(null)
+  useClickOutside(searchRef, () => setSearchOpen(false))
 
   useEffect(() => {
     const term = String(debouncedQ || '').trim()
@@ -87,7 +104,7 @@ export default function AppLayout() {
 
       <main className="main">
         <div className="topbar">
-          <div className="searchBox" style={{ position: 'relative' }}>
+          <div className="searchBox searchBoxWrap" ref={searchRef}>
             <input
               value={q}
               onChange={(e) => {
@@ -99,19 +116,7 @@ export default function AppLayout() {
             />
 
             {searchOpen && q.trim() && (
-              <div
-                className="card"
-                style={{
-                  position: 'absolute',
-                  top: 48,
-                  left: 0,
-                  right: 0,
-                  padding: 0,
-                  maxHeight: 320,
-                  overflow: 'auto',
-                }}
-                onMouseDown={(e) => e.preventDefault()}
-              >
+              <div className="card searchDropdown" onMouseDown={(e) => e.preventDefault()}>
                 <table className="table">
                   <thead>
                     <tr>

@@ -3,6 +3,10 @@ import { api, getErrorMessage } from '../services/api'
 import { downloadBlob } from '../services/download'
 import { shopConfig } from '../services/shopConfig'
 import { useToast } from '../components/useToast'
+import ConfirmDialog from '../components/ConfirmDialog'
+import PromptDialog from '../components/PromptDialog'
+import AlertDialog from '../components/AlertDialog'
+import EditPricesModal from '../components/EditPricesModal'
 
 export default function InventoryPage() {
   const setToast = useToast()
@@ -20,6 +24,11 @@ export default function InventoryPage() {
     quantity: '0',
   })
   const [saving, setSaving] = useState(false)
+
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, item: null })
+  const [promptStock, setPromptStock] = useState({ open: false, item: null })
+  const [editPrices, setEditPrices] = useState({ open: false, item: null })
+  const [alertSales, setAlertSales] = useState({ open: false, message: '' })
 
   const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
 
@@ -81,16 +90,14 @@ export default function InventoryPage() {
     }
   }
 
-  const editItem = async (it) => {
-    const selling = window.prompt('Selling price', String(it.selling_price))
-    if (selling === null) return
-    const cost = window.prompt('Cost price', String(it.cost_price))
-    if (cost === null) return
+  const editItem = (it) => {
+    setEditPrices({ open: true, item: it })
+  }
+
+  const handleEditPricesSave = async (prices) => {
+    if (!editPrices.item) return
     try {
-      await api.put(`/items/${it.id}`, {
-        selling_price: Number(selling),
-        cost_price: Number(cost),
-      })
+      await api.put(`/items/${editPrices.item.id}`, prices)
       await loadItems()
       setToast('Item updated')
     } catch (e) {
@@ -98,11 +105,14 @@ export default function InventoryPage() {
     }
   }
 
-  const addStock = async (it) => {
-    const qty = window.prompt(`Add stock quantity for ${it.item_name} ${it.model}`, '1')
-    if (qty === null) return
+  const addStock = (it) => {
+    setPromptStock({ open: true, item: it })
+  }
+
+  const handleAddStockSubmit = async (qtyStr) => {
+    if (!promptStock.item || !qtyStr) return
     try {
-      await api.post(`/items/${it.id}/add-stock`, { quantity: Number(qty), note: 'Manual stock add' })
+      await api.post(`/items/${promptStock.item.id}/add-stock`, { quantity: Number(qtyStr), note: 'Manual stock add' })
       await loadItems()
       setToast('Stock updated')
     } catch (e) {
@@ -110,10 +120,14 @@ export default function InventoryPage() {
     }
   }
 
-  const removeItem = async (it) => {
-    if (!window.confirm(`Delete item "${it.item_name} ${it.model}"?`)) return
+  const removeItem = (it) => {
+    setConfirmDelete({ open: true, item: it })
+  }
+
+  const handleRemoveConfirm = async () => {
+    if (!confirmDelete.item) return
     try {
-      await api.delete(`/items/${it.id}`)
+      await api.delete(`/items/${confirmDelete.item.id}`)
       await loadItems()
       setToast('Item deleted')
     } catch (e) {
@@ -125,6 +139,7 @@ export default function InventoryPage() {
     try {
       const res = await api.get('/excel/export/inventory', { responseType: 'blob' })
       downloadBlob(res.data, 'inventory.xlsx')
+      setToast('Export complete')
     } catch (e) {
       setToast(getErrorMessage(e))
     }
@@ -156,29 +171,34 @@ export default function InventoryPage() {
           return `${dt.toLocaleString()} • qty ${r.quantity} • profit ${money(r.line_profit)}`
         })
         .join('\n')
-      window.alert(lines || 'No sales yet')
+      setAlertSales({ open: true, message: lines || 'No sales yet' })
     } catch (e) {
       setToast(getErrorMessage(e))
     }
   }
 
+  const categoryOptions = useMemo(() => {
+    const list = categories.filter((c) => c.name && c.name.trim())
+    return list.sort((a, b) => a.name.localeCompare(b.name))
+  }, [categories])
+
   return (
-    <div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+    <div className="page">
+      <header className="pageHeader">
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Inventory</div>
-          <div className="muted">Add items, update prices, add stock, Excel import/export</div>
+          <h1 className="pageTitle">Inventory</h1>
+          <p className="pageSubtitle">Add items, update prices, add stock, Excel import/export</p>
         </div>
-        <div className="row">
+        <div className="actionGroup">
           <button className="btn" onClick={exportInventory}>
             Export Excel
           </button>
-          <label className="btn">
+          <label className="btn btnFile">
             Import Excel
             <input
               type="file"
               accept=".xlsx"
-              style={{ display: 'none' }}
+              className="srOnly"
               onChange={(e) => {
                 const f = e.target.files?.[0]
                 e.target.value = ''
@@ -187,43 +207,47 @@ export default function InventoryPage() {
             />
           </label>
         </div>
-      </div>
+      </header>
 
-      <div className="card">
-        <div className="grid3">
-          <div>
-            <div className="muted" style={{ marginBottom: 6 }}>
+      <section className="card cardSection">
+        <h2 className="cardTitle">Add new item</h2>
+        <div className="formGrid formGrid3">
+          <div className="formField">
+            <label className="formLabel" htmlFor="inv-cat">
               Category
-            </div>
+            </label>
             <select
+              id="inv-cat"
               className="select"
               value={form.category_id}
               onChange={(e) => setForm((p) => ({ ...p, category_id: e.target.value }))}
             >
-              <option value="">Select</option>
-              {categories.map((c) => (
+              <option value="">Select category</option>
+              {categoryOptions.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
               ))}
             </select>
           </div>
-          <div>
-            <div className="muted" style={{ marginBottom: 6 }}>
-              Item Name
-            </div>
+          <div className="formField">
+            <label className="formLabel" htmlFor="inv-name">
+              Item name
+            </label>
             <input
+              id="inv-name"
               className="input"
               value={form.item_name}
               onChange={(e) => setForm((p) => ({ ...p, item_name: e.target.value }))}
               placeholder="e.g. iPhone"
             />
           </div>
-          <div>
-            <div className="muted" style={{ marginBottom: 6 }}>
+          <div className="formField">
+            <label className="formLabel" htmlFor="inv-model">
               Model
-            </div>
+            </label>
             <input
+              id="inv-model"
               className="input"
               value={form.model}
               onChange={(e) => setForm((p) => ({ ...p, model: e.target.value }))}
@@ -231,147 +255,177 @@ export default function InventoryPage() {
             />
           </div>
         </div>
-
-        <div style={{ height: 10 }} />
-
-        <div className="grid3">
-          <div>
-            <div className="muted" style={{ marginBottom: 6 }}>
-              Cost Price
-            </div>
+        <div className="formGrid formGrid3">
+          <div className="formField">
+            <label className="formLabel" htmlFor="inv-cost">
+              Cost price
+            </label>
             <input
+              id="inv-cost"
               className="input"
               value={form.cost_price}
               onChange={(e) => setForm((p) => ({ ...p, cost_price: e.target.value }))}
               placeholder="e.g. 50000"
+              inputMode="decimal"
             />
           </div>
-          <div>
-            <div className="muted" style={{ marginBottom: 6 }}>
-              Selling Price
-            </div>
+          <div className="formField">
+            <label className="formLabel" htmlFor="inv-selling">
+              Selling price
+            </label>
             <input
+              id="inv-selling"
               className="input"
               value={form.selling_price}
               onChange={(e) => setForm((p) => ({ ...p, selling_price: e.target.value }))}
               placeholder="e.g. 55000"
+              inputMode="decimal"
             />
           </div>
-          <div>
-            <div className="muted" style={{ marginBottom: 6 }}>
+          <div className="formField">
+            <label className="formLabel" htmlFor="inv-qty">
               Quantity
-            </div>
+            </label>
             <input
+              id="inv-qty"
               className="input"
               value={form.quantity}
               onChange={(e) => setForm((p) => ({ ...p, quantity: e.target.value }))}
               placeholder="e.g. 10"
+              inputMode="numeric"
             />
           </div>
         </div>
-
-        <div style={{ height: 10 }} />
-
-        <div className="row">
+        <div className="formRow formRowNote">
           <button className="btn btnPrimary" onClick={addItem} disabled={saving}>
-            Add Item
+            Add item
           </button>
-          <div className="muted" style={{ fontSize: 12 }}>
-            Rule: Item Name + Model must be unique.
-          </div>
+          <span className="muted">Item Name + Model must be unique.</span>
         </div>
-      </div>
+      </section>
 
-      <div style={{ height: 12 }} />
-
-      <div className="card">
-        <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
-          <div className="row">
+      <section className="card cardSection">
+        <div className="cardHeader">
+          <h2 className="cardTitle">Item list</h2>
+          <div className="filterRow">
             <select
-              className="select"
-              style={{ maxWidth: 240 }}
+              className="select selectSm"
               value={filterCategoryId}
               onChange={(e) => setFilterCategoryId(e.target.value)}
+              aria-label="Filter by category"
             >
-              <option value="">All Categories</option>
-              {categories.map((c) => (
+              <option value="">All categories</option>
+              {categoryOptions.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
               ))}
             </select>
             <input
-              className="input"
-              style={{ maxWidth: 260 }}
+              className="input inputSm"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Filter by item/model"
+              aria-label="Search items"
             />
-            <button className="btn" onClick={loadItems}>
+            <button className="btn btnSm" onClick={loadItems}>
               Refresh
             </button>
           </div>
-          <div className="muted" style={{ fontSize: 12 }}>
-            Showing {filtered.length} items
-          </div>
         </div>
-
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Model</th>
-              <th>Category</th>
-              <th>Qty</th>
-              <th>Cost</th>
-              <th>Selling</th>
-              <th style={{ width: 360 }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((it) => (
-              <tr key={it.id}>
-                <td>{it.item_name}</td>
-                <td className="muted">{it.model}</td>
-                <td className="muted">{it.category?.name}</td>
-                <td>
-                  {it.quantity === 0 ? (
-                    <span className="pill pillDanger">0</span>
-                  ) : (
-                    <span className="pill">{it.quantity}</span>
-                  )}
-                </td>
-                <td className="muted">{money(it.cost_price)}</td>
-                <td>{money(it.selling_price)}</td>
-                <td>
-                  <div className="row">
-                    <button className="btn" onClick={() => addStock(it)}>
-                      Add Stock
-                    </button>
-                    <button className="btn" onClick={() => editItem(it)}>
-                      Edit Prices
-                    </button>
-                    <button className="btn" onClick={() => viewItemSales(it)}>
-                      Item Sales
-                    </button>
-                    <button className="btn btnDanger" onClick={() => removeItem(it)}>
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
+        <p className="muted cardMeta">Showing {filtered.length} items</p>
+        <div className="tableWrap">
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan="7" className="muted">
-                  No items found
-                </td>
+                <th>Item</th>
+                <th>Model</th>
+                <th>Category</th>
+                <th>Qty</th>
+                <th>Cost</th>
+                <th>Selling</th>
+                <th className="colActions">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filtered.map((it) => (
+                <tr key={it.id}>
+                  <td>{it.item_name}</td>
+                  <td className="muted">{it.model}</td>
+                  <td className="muted">{it.category?.name}</td>
+                  <td>
+                    {it.quantity === 0 ? (
+                      <span className="pill pillDanger">0</span>
+                    ) : (
+                      <span className="pill">{it.quantity}</span>
+                    )}
+                  </td>
+                  <td className="muted">{money(it.cost_price)}</td>
+                  <td>{money(it.selling_price)}</td>
+                  <td>
+                    <div className="actionGroup actionGroupWrap">
+                      <button className="btn btnSm" onClick={() => addStock(it)}>
+                        Add stock
+                      </button>
+                      <button className="btn btnSm" onClick={() => editItem(it)}>
+                        Edit prices
+                      </button>
+                      <button className="btn btnSm" onClick={() => viewItemSales(it)}>
+                        Item sales
+                      </button>
+                      <button className="btn btnSm btnDanger" onClick={() => removeItem(it)}>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="emptyCell">
+                    No items found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <ConfirmDialog
+        open={confirmDelete.open}
+        title="Delete item"
+        message={`Delete "${confirmDelete.item?.item_name} ${confirmDelete.item?.model}"?`}
+        confirmLabel="Delete"
+        onConfirm={handleRemoveConfirm}
+        onCancel={() => setConfirmDelete({ open: false, item: null })}
+      />
+
+      <PromptDialog
+        open={promptStock.open}
+        title="Add stock"
+        label={`Quantity to add for ${promptStock.item?.item_name} ${promptStock.item?.model}`}
+        defaultValue="1"
+        inputType="number"
+        inputMode="numeric"
+        submitLabel="Add"
+        onSubmit={handleAddStockSubmit}
+        onCancel={() => setPromptStock({ open: false, item: null })}
+      />
+
+      <EditPricesModal
+        open={editPrices.open}
+        item={editPrices.item}
+        onSave={handleEditPricesSave}
+        onClose={() => setEditPrices({ open: false, item: null })}
+      />
+
+      <AlertDialog
+        open={alertSales.open}
+        title="Item sales history"
+        message={alertSales.message}
+        onClose={() => setAlertSales({ open: false, message: '' })}
+      />
     </div>
   )
 }
-

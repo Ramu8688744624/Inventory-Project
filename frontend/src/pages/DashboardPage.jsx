@@ -20,47 +20,47 @@ export default function DashboardPage() {
   const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
 
   return (
-    <div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+    <div className="page">
+      <header className="pageHeader">
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Dashboard</div>
-          <div className="muted">Fast overview for today & month</div>
+          <h1 className="pageTitle">Dashboard</h1>
+          <p className="pageSubtitle">Fast overview for today & month</p>
         </div>
         <button className="btn" onClick={() => window.location.reload()}>
           Refresh
         </button>
-      </div>
+      </header>
 
-      {loading && <div className="card">Loading…</div>}
+      {loading && <section className="card cardSection">Loading…</section>}
       {!loading && data && (
         <>
-          <div className="grid3">
-            <div className="card">
+          <section className="grid3" aria-label="Sales and profit summary">
+            <div className="card cardSection">
               <div className="cardTitle">Sales Today</div>
-              <div style={{ fontSize: 22, fontWeight: 800 }}>{money(data.sales_today)}</div>
+              <div className="statValue">{money(data.sales_today)}</div>
               <div className="muted">This week: {money(data.sales_week)}</div>
             </div>
-            <div className="card">
+            <div className="card cardSection">
               <div className="cardTitle">Sales This Month</div>
-              <div style={{ fontSize: 22, fontWeight: 800 }}>{money(data.sales_month)}</div>
+              <div className="statValue">{money(data.sales_month)}</div>
               <div className="muted">Month to date</div>
             </div>
-            <div className="card">
+            <div className="card cardSection">
               <div className="cardTitle">Profit Today</div>
-              <div style={{ fontSize: 22, fontWeight: 800 }}>{money(data.profit_today)}</div>
+              <div className="statValue">{money(data.profit_today)}</div>
               <div className="muted">Month profit: {money(data.profit_month)}</div>
             </div>
-          </div>
+          </section>
 
-          <div style={{ height: 12 }} />
+          <div className="sectionGap" />
 
-          <div className="grid2">
-            <div className="card">
+          <section className="grid2" aria-label="Stock value and alerts">
+            <div className="card cardSection">
               <div className="cardTitle">Total Stock Value (Cost)</div>
-              <div style={{ fontSize: 22, fontWeight: 800 }}>{money(data.stock_value)}</div>
+              <div className="statValue">{money(data.stock_value)}</div>
               <div className="muted">Inventory value at cost price</div>
             </div>
-            <div className="card">
+            <div className="card cardSection">
               <div className="cardTitle">Stock Alerts</div>
               <div className="muted">Low stock threshold: {data.low_stock_threshold}</div>
               <div className="row" style={{ marginTop: 8 }}>
@@ -68,13 +68,14 @@ export default function DashboardPage() {
                 <span className="pill pillDanger">Out of stock: {data.out_of_stock_items?.length || 0}</span>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div style={{ height: 12 }} />
+          <div className="sectionGap" />
 
-          <div className="grid2">
-            <div className="card">
+          <section className="grid2" aria-label="Low and out of stock">
+            <div className="card cardSection">
               <div className="cardTitle">Low Stock Items</div>
+              <div className="tableWrap">
               <table className="table">
                 <thead>
                   <tr>
@@ -97,17 +98,19 @@ export default function DashboardPage() {
                   ))}
                   {(data.low_stock_items || []).length === 0 && (
                     <tr>
-                      <td colSpan="4" className="muted">
+                      <td colSpan="4" className="emptyCell">
                         No low stock items
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
 
-            <div className="card">
+            <div className="card cardSection">
               <div className="cardTitle">Out of Stock Items</div>
+              <div className="tableWrap">
               <table className="table">
                 <thead>
                   <tr>
@@ -126,15 +129,16 @@ export default function DashboardPage() {
                   ))}
                   {(data.out_of_stock_items || []).length === 0 && (
                     <tr>
-                      <td colSpan="3" className="muted">
+                      <td colSpan="3" className="emptyCell">
                         No out of stock items
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
-          </div>
+          </section>
         </>
       )}
     </div>

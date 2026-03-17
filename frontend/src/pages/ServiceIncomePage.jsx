@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, getErrorMessage } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
 import { useToast } from '../components/useToast'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 function ymd(d) {
   return d.toISOString().slice(0, 10)
@@ -12,6 +13,7 @@ export default function ServiceIncomePage() {
   const [rows, setRows] = useState([])
   const [form, setForm] = useState({ service_name: '', amount: '', service_date: ymd(new Date()), notes: '' })
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, row: null })
 
   const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
 
@@ -44,10 +46,14 @@ export default function ServiceIncomePage() {
     }
   }
 
-  const remove = async (r) => {
-    if (!window.confirm('Delete this service entry?')) return
+  const remove = (r) => {
+    setConfirmDelete({ open: true, row: r })
+  }
+
+  const handleRemoveConfirm = async () => {
+    if (!confirmDelete.row) return
     try {
-      await api.delete(`/services/${r.id}`)
+      await api.delete(`/services/${confirmDelete.row.id}`)
       await load()
       setToast('Deleted')
     } catch (e) {
@@ -56,74 +62,122 @@ export default function ServiceIncomePage() {
   }
 
   return (
-    <div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+    <div className="page">
+      <header className="pageHeader">
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Service Income</div>
-          <div className="muted">Profit = Amount (no investment)</div>
+          <h1 className="pageTitle">Service Income</h1>
+          <p className="pageSubtitle">Profit = Amount (no investment)</p>
         </div>
-        <button className="btn" onClick={load}>Refresh</button>
-      </div>
+        <button className="btn" onClick={load}>
+          Refresh
+        </button>
+      </header>
 
-      <div className="card">
-        <div className="grid3">
-          <div>
-            <div className="muted" style={{ marginBottom: 6 }}>Service Name</div>
-            <input className="input" value={form.service_name} onChange={(e) => setForm((p) => ({ ...p, service_name: e.target.value }))} placeholder="e.g. Screen replacement" />
+      <section className="card cardSection">
+        <h2 className="cardTitle">Add service income</h2>
+        <div className="formGrid formGrid3">
+          <div className="formField">
+            <label className="formLabel" htmlFor="svc-name">
+              Service name
+            </label>
+            <input
+              id="svc-name"
+              className="input"
+              value={form.service_name}
+              onChange={(e) => setForm((p) => ({ ...p, service_name: e.target.value }))}
+              placeholder="e.g. Screen replacement"
+            />
           </div>
-          <div>
-            <div className="muted" style={{ marginBottom: 6 }}>Amount</div>
-            <input className="input" value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} placeholder="e.g. 500" inputMode="decimal" />
+          <div className="formField">
+            <label className="formLabel" htmlFor="svc-amount">
+              Amount
+            </label>
+            <input
+              id="svc-amount"
+              className="input"
+              value={form.amount}
+              onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
+              placeholder="e.g. 500"
+              inputMode="decimal"
+            />
           </div>
-          <div>
-            <div className="muted" style={{ marginBottom: 6 }}>Date</div>
-            <input className="input" type="date" value={form.service_date} onChange={(e) => setForm((p) => ({ ...p, service_date: e.target.value }))} />
+          <div className="formField">
+            <label className="formLabel" htmlFor="svc-date">
+              Date
+            </label>
+            <input
+              id="svc-date"
+              className="input"
+              type="date"
+              value={form.service_date}
+              onChange={(e) => setForm((p) => ({ ...p, service_date: e.target.value }))}
+            />
           </div>
         </div>
-        <div style={{ height: 10 }} />
-        <div>
-          <div className="muted" style={{ marginBottom: 6 }}>Notes</div>
-          <textarea className="textarea" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Optional notes" />
+        <div className="formField">
+          <label className="formLabel" htmlFor="svc-notes">
+            Notes (optional)
+          </label>
+          <textarea
+            id="svc-notes"
+            className="textarea"
+            value={form.notes}
+            onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+            placeholder="Optional notes"
+          />
         </div>
-        <div style={{ height: 10 }} />
-        <button className="btn btnPrimary" onClick={add} disabled={saving}>Save</button>
-      </div>
+        <button className="btn btnPrimary" onClick={add} disabled={saving}>
+          Save
+        </button>
+      </section>
 
-      <div style={{ height: 12 }} />
-
-      <div className="card">
-        <div className="cardTitle">This Month</div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Service</th>
-              <th>Amount</th>
-              <th>Notes</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td className="muted">{r.service_date}</td>
-                <td>{r.service_name}</td>
-                <td>{money(r.amount)}</td>
-                <td className="muted">{r.notes || ''}</td>
-                <td>
-                  <button className="btn btnDanger" onClick={() => remove(r)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
+      <section className="card cardSection">
+        <h2 className="cardTitle">This month</h2>
+        <div className="tableWrap">
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan="5" className="muted">No service income yet</td>
+                <th>Date</th>
+                <th>Service</th>
+                <th>Amount</th>
+                <th>Notes</th>
+                <th className="colActions"></th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td className="muted">{r.service_date}</td>
+                  <td>{r.service_name}</td>
+                  <td>{money(r.amount)}</td>
+                  <td className="muted">{r.notes || ''}</td>
+                  <td>
+                    <button className="btn btnSm btnDanger" onClick={() => remove(r)} aria-label={`Delete ${r.service_name}`}>
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="emptyCell">
+                    No service income yet
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <ConfirmDialog
+        open={confirmDelete.open}
+        title="Delete service entry"
+        message="Delete this service income record?"
+        confirmLabel="Delete"
+        onConfirm={handleRemoveConfirm}
+        onCancel={() => setConfirmDelete({ open: false, row: null })}
+      />
     </div>
   )
 }
-

@@ -6,7 +6,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
-const { sequelize } = require('./models');
+const { sequelize, Shop } = require('./models');
+const { setDefaultShopId } = require('./services/shopContext');
 const { AppError } = require('./services/errors');
 
 const categoriesRoutes = require('./routes/categories');
@@ -66,6 +67,33 @@ async function start() {
   // In dev, auto-create tables if they don't exist.
   // For production, run database/schema.sql manually and keep sync disabled.
   await sequelize.sync();
+
+  // Ensure there is at least one default shop so foreign keys never fail
+  // on a fresh installation. This is idempotent and safe in production.
+  const existingCount = await Shop.count();
+  if (existingCount === 0) {
+    const created = await Shop.create({
+      name: 'JaiBhajarang Mobiles',
+      city: 'Karimnagar',
+      state: 'Telangana',
+      country: 'India',
+    });
+    // eslint-disable-next-line no-console
+    console.log(`Created default shop with id=${created.id}`);
+    if (!process.env.SHOP_ID) {
+      process.env.SHOP_ID = String(created.id);
+    }
+    setDefaultShopId(created.id);
+  } else if (!process.env.SHOP_ID) {
+    // If shops already exist but SHOP_ID is not set, default to first shop.
+    const first = await Shop.findOne({ order: [['id', 'ASC']] });
+    if (first) {
+      process.env.SHOP_ID = String(first.id);
+      setDefaultShopId(first.id);
+      // eslint-disable-next-line no-console
+      console.log(`Using existing shop id=${first.id} as default SHOP_ID`);
+    }
+  }
 
   app.listen(PORT, () => {
     // eslint-disable-next-line no-console
