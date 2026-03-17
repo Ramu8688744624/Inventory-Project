@@ -1,8 +1,8 @@
 const { Op } = require('sequelize');
-const { sequelize, Sale, SaleItem, Item, Category, StockMovement } = require('../models');
+const { sequelize, Sale, SaleItem, Item, Category, StockMovement, SaleHistory } = require('../models');
 const { AppError } = require('./errors');
 
-async function createSale(shopId, payload) {
+async function createSale(shopId, payload, userId = null) {
   const soldAt = payload.sold_at ? new Date(payload.sold_at) : new Date();
   if (Number.isNaN(soldAt.getTime())) throw new AppError('Invalid sold_at.', 400);
   const lines = Array.isArray(payload.items) ? payload.items : [];
@@ -73,6 +73,24 @@ async function createSale(shopId, payload) {
     sale.total_amount = totalAmount;
     sale.total_profit = totalProfit;
     await sale.save({ transaction: t });
+
+    await SaleHistory.create(
+      {
+        original_id: sale.id,
+        shop_id: shopId,
+        user_id: userId,
+        operation_type: 'INSERT',
+        data_snapshot: JSON.stringify({
+          id: sale.id,
+          shop_id: shopId,
+          sold_at: sale.sold_at,
+          total_amount: sale.total_amount,
+          total_profit: sale.total_profit,
+        }),
+        created_at: new Date(),
+      },
+      { transaction: t }
+    );
 
     return sale;
   });

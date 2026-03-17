@@ -4,7 +4,7 @@ const salesService = require('../services/salesService');
 
 const create = wrap(async (req, res) => {
   const shopId = getShopId(req);
-  const data = await salesService.createSale(shopId, req.body);
+  const data = await salesService.createSale(shopId, req.body, req.userId);
   res.status(201).json({ data });
 });
 

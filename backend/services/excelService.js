@@ -139,5 +139,89 @@ async function exportInventoryToExcel(shopId) {
   return workbook.xlsx.writeBuffer();
 }
 
-module.exports = { importInventoryFromExcel, exportInventoryToExcel };
+async function exportInventoryTemplate() {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('InventoryTemplate');
+
+  sheet.columns = [
+    { header: 'Category', key: 'category', width: 20 },
+    { header: 'Item Name', key: 'item_name', width: 25 },
+    { header: 'Model', key: 'model', width: 25 },
+    { header: 'Cost Price', key: 'cost_price', width: 12 },
+    { header: 'Selling Price', key: 'selling_price', width: 12 },
+    { header: 'Quantity', key: 'quantity', width: 10 },
+  ];
+
+  sheet.addRow({ category: 'Example Category', item_name: 'Example Item', model: 'Model X', cost_price: 500, selling_price: 700, quantity: 10 });
+  return workbook.xlsx.writeBuffer();
+}
+
+async function exportCategoriesToExcel(shopId) {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('Categories');
+
+  sheet.columns = [{ header: 'Category Name', key: 'name', width: 30 }];
+
+  const categories = await Category.findAll({ where: { shop_id: shopId }, order: [['name', 'ASC']] });
+  for (const c of categories) {
+    sheet.addRow({ name: c.name });
+  }
+
+  return workbook.xlsx.writeBuffer();
+}
+
+async function exportCategoriesTemplate() {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('CategoriesTemplate');
+  sheet.columns = [{ header: 'Category Name', key: 'name', width: 30 }];
+  sheet.addRow({ name: 'Example Category' });
+  return workbook.xlsx.writeBuffer();
+}
+
+async function importCategoriesFromExcel(shopId, filePath) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(filePath);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) throw new AppError('Excel file has no sheets.', 400);
+
+  const headerRow = sheet.getRow(1);
+  const headers = {};
+  headerRow.eachCell((cell, colNumber) => {
+    const key = normalizeHeader(cell.value);
+    headers[key] = colNumber;
+  });
+
+  if (!headers['category name']) throw new AppError('Missing column: category name', 400);
+
+  const names = new Set();
+  for (let r = 2; r <= sheet.rowCount; r += 1) {
+    const row = sheet.getRow(r);
+    const name = String(row.getCell(headers['category name']).value || '').trim();
+    if (name) names.add(name);
+  }
+
+  if (names.size === 0) return { imported: 0 };
+
+  return sequelize.transaction(async (t) => {
+    let imported = 0;
+    for (const name of names) {
+      const [category, created] = await Category.findOrCreate({
+        where: { shop_id: shopId, name },
+        defaults: { shop_id: shopId, name },
+        transaction: t,
+      });
+      if (created) imported += 1;
+    }
+    return { imported };
+  });
+}
+
+module.exports = {
+  importInventoryFromExcel,
+  exportInventoryToExcel,
+  exportInventoryTemplate,
+  importCategoriesFromExcel,
+  exportCategoriesToExcel,
+  exportCategoriesTemplate,
+};
 

@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
-import { api, getErrorMessage } from '../services/api'
+import { api, getErrorMessage, AUTH_ENABLED } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
+import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../components/useToast'
 
 export default function DashboardPage() {
+  const { user } = useAuth()
   const setToast = useToast()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showValues, setShowValues] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -15,9 +18,16 @@ export default function DashboardPage() {
       .then((res) => setData(res.data?.data))
       .catch((e) => setToast(getErrorMessage(e)))
       .finally(() => setLoading(false))
-  }, [setToast])
 
-  const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
+    if (AUTH_ENABLED && user?.settings?.showFinancialData !== undefined) {
+      setShowValues(Boolean(user.settings.showFinancialData))
+    } else {
+      setShowValues(localStorage.getItem('showFinancialData') === 'true')
+    }
+  }, [setToast, user])
+
+  const masked = `${shopConfig.currencySymbol} ****`
+  const money = (v) => (showValues ? `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}` : masked)
 
   return (
     <div className="page">
@@ -26,9 +36,11 @@ export default function DashboardPage() {
           <h1 className="pageTitle">Dashboard</h1>
           <p className="pageSubtitle">Fast overview for today & month</p>
         </div>
-        <button className="btn" onClick={() => window.location.reload()}>
-          Refresh
-        </button>
+        <div>
+          <button className="btn" onClick={() => window.location.reload()}>
+            Refresh
+          </button>
+        </div>
       </header>
 
       {loading && <section className="card cardSection">Loading…</section>}

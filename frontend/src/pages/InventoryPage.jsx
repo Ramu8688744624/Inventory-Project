@@ -193,6 +193,17 @@ export default function InventoryPage() {
           <button className="btn" onClick={exportInventory}>
             Export Excel
           </button>
+          <button className="btn" onClick={async () => {
+            try {
+              const res = await api.get('/excel/export/inventory-template', { responseType: 'blob' })
+              downloadBlob(res.data, 'inventory-template.xlsx')
+              setToast('Template downloaded')
+            } catch (e) {
+              setToast(getErrorMessage(e))
+            }
+          }}>
+            Download inventory template
+          </button>
           <label className="btn btnFile">
             Import Excel
             <input

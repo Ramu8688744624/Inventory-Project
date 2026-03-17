@@ -58,31 +58,82 @@ button, input, select, textarea {
   display: grid;
   grid-template-columns: 260px 1fr;
   min-height: 100vh;
+  position: relative;
 }
 
-@media (max-width: 900px) {
-  .appShell {
-    grid-template-columns: 1fr;
-  }
+/* Hamburger - hidden on desktop */
+.menuToggle {
+  display: none;
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 100;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: rgba(15, 26, 46, 0.95);
+  border-radius: 12px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background var(--ease);
+}
+.menuToggle:hover { background: rgba(255,255,255,0.08); }
+.menuToggleBar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 1px;
+  transition: transform var(--ease), opacity var(--ease);
+}
+
+/* Sidebar overlay - mobile only */
+.sidebarOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+  background: rgba(0,0,0,0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ease-slow);
+}
+.sidebarOverlayOpen {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .sidebar {
   border-right: 1px solid var(--border);
   background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
   padding: 14px 12px;
+  transition: transform var(--ease-slow);
 }
 
 @media (max-width: 900px) {
+  .appShell { grid-template-columns: 1fr; }
+  .menuToggle { display: flex; }
+  .sidebarOverlay { display: block; }
   .sidebar {
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 10;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    z-index: 99;
+    transform: translateX(-100%);
+    overflow-y: auto;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.3);
   }
+  .sidebar.sidebarOpen {
+    transform: translateX(0);
+  }
+  .main { margin-top: 0; padding-left: 76px; }
 }
 
 .brand {
@@ -335,7 +386,7 @@ button, input, select, textarea {
 
 /* Table enhancements */
 .tableWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; }
-.colActions { width: 1%; white-space: nowrap; }
+.colActions { width: 1%; min-width: 220px; white-space: nowrap; }
 .emptyCell { color: var(--muted); padding: 20px !important; text-align: center; }
 .tableRowClickable { cursor: pointer; transition: background var(--ease); }
 .tableRowClickable:hover { background: rgba(255,255,255,0.04); }
@@ -400,12 +451,36 @@ button, input, select, textarea {
   .cardHeader { flex-direction: column; align-items: stretch; }
   .filterRow { width: 100%; }
   .table th, .table td { padding: 12px 10px; font-size: 0.9375rem; }
-  .actionGroupWrap { flex-direction: column; align-items: stretch; }
-  .actionGroupWrap .btn { width: 100%; justify-content: center; }
+  .actionGroupWrap { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+  .colActions { min-width: 200px; }
   .main { padding: 14px; }
   .modalContent { padding: 20px; max-height: 85vh; }
   .modalOverlay { padding: 12px; }
 }
+
+/* Auth pages */
+.authPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.authCard {
+  width: 100%;
+  max-width: 400px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+}
+.authTitle { font-size: 1.5rem; font-weight: 800; margin: 0 0 4px 0; }
+.authSubtitle { margin: 0 0 24px 0; }
+.authForm { display: flex; flex-direction: column; gap: 16px; }
+.authError { color: var(--danger); font-size: 0.9375rem; }
+.authSuccess { display: flex; flex-direction: column; gap: 16px; }
+.authSubmit { margin-top: 8px; }
+.authLink { color: var(--accent); font-size: 0.9375rem; text-align: center; }
 
 @media (max-width: 600px) {
   .pageTitle { font-size: 1.25rem; }

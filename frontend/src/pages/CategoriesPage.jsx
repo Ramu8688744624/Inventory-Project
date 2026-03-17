@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, getErrorMessage } from '../services/api'
+import { downloadBlob } from '../services/download'
 import { useToast } from '../components/useToast'
 import ConfirmDialog from '../components/ConfirmDialog'
 import PromptDialog from '../components/PromptDialog'
@@ -77,6 +78,52 @@ export default function CategoriesPage() {
         <div>
           <h1 className="pageTitle">Categories</h1>
           <p className="pageSubtitle">Create, edit, delete categories</p>
+        </div>
+        <div className="actionGroup">
+          <button className="btn" onClick={async () => {
+            try {
+              const res = await api.get('/excel/export/categories-template', { responseType: 'blob' })
+              downloadBlob(res.data, 'categories-template.xlsx')
+              setToast('Template downloaded')
+            } catch (e) {
+              setToast(getErrorMessage(e))
+            }
+          }}>
+            Download categories template
+          </button>
+          <button className="btn" onClick={async () => {
+            try {
+              const res = await api.get('/excel/export/categories', { responseType: 'blob' })
+              downloadBlob(res.data, 'categories.xlsx')
+              setToast('Categories export complete')
+            } catch (e) {
+              setToast(getErrorMessage(e))
+            }
+          }}>
+            Export categories
+          </button>
+          <label className="btn btnFile">
+            Import categories
+            <input
+              type="file"
+              accept=".xlsx"
+              className="srOnly"
+              onChange={async (e) => {
+                const f = e.target.files?.[0]
+                e.target.value = ''
+                if (!f) return
+                const fd = new FormData()
+                fd.append('file', f)
+                try {
+                  await api.post('/excel/import/categories', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+                  await load()
+                  setToast('Categories imported')
+                } catch (err) {
+                  setToast(getErrorMessage(err))
+                }
+              }}
+            />
+          </label>
         </div>
       </header>
 

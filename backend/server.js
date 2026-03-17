@@ -6,7 +6,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
-const { sequelize, Shop } = require('./models');
+const { DataTypes } = require('sequelize');
+const { sequelize, Shop, User } = require('./models');
 const { setDefaultShopId } = require('./services/shopContext');
 const { AppError } = require('./services/errors');
 
@@ -16,11 +17,20 @@ const salesRoutes = require('./routes/sales');
 const servicesRoutes = require('./routes/services');
 const reportsRoutes = require('./routes/reports');
 const excelRoutes = require('./routes/excel');
+const backupRoutes = require('./routes/backup');
+const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const { requireAuth } = require('./middleware/authMiddleware');
 
 const app = express();
 
 app.use(helmet());
 app.use(cors({ origin: 'http://localhost:5173' }));
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store')
+  res.setHeader('Pragma', 'no-cache')
+  next()
+})
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
 app.use(
@@ -34,12 +44,17 @@ app.use(
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
+app.use('/api/auth', authRoutes);
+app.use(requireAuth);
+
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/services', servicesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/excel', excelRoutes);
+app.use('/api/backup', backupRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use((req, res, next) => next(new AppError('Not found', 404)));
 
@@ -64,9 +79,51 @@ const PORT = Number(process.env.PORT || 5000);
 
 async function start() {
   await sequelize.authenticate();
-  // In dev, auto-create tables if they don't exist.
+
+  // Ensure history table schema migration to new column names and fields
+  const qi = sequelize.getQueryInterface();
+  const historyConfigs = [
+    { table: 'categories_history', oldId: 'category_id' },
+    { table: 'items_history', oldId: 'item_id' },
+    { table: 'sales_history', oldId: 'sale_id' },
+    { table: 'service_income_history', oldId: 'service_income_id' },
+  ];
+
+  for (const cfg of historyConfigs) {
+    try {
+      const desc = await qi.describeTable(cfg.table);
+      if (!desc.original_id) {
+        await qi.addColumn(cfg.table, 'original_id', {
+          type: DataTypes.BIGINT.UNSIGNED,
+          allowNull: false,
+          defaultValue: 0,
+        });
+        if (desc[cfg.oldId]) {
+          await sequelize.query('UPDATE `' + cfg.table + '` SET original_id = `' + cfg.oldId + '`');
+        }
+      }
+      if (!desc.data_snapshot) {
+        await qi.addColumn(cfg.table, 'data_snapshot', {
+          type: DataTypes.TEXT,
+          allowNull: true,
+        });
+        // populate from existing record fields when possible
+        if (desc[cfg.oldId]) {
+          // leave as null for now
+        }
+      }
+    } catch (e) {
+      // Table may not exist yet; ignore
+    }
+  }
+
+  // In dev, auto-create/alter tables to match models.
   // For production, run database/schema.sql manually and keep sync disabled.
-  await sequelize.sync();
+  if (process.env.NODE_ENV === 'production') {
+    await sequelize.sync({ alter: false });
+  } else {
+    await sequelize.sync({ alter: true });
+  }
 
   // Ensure there is at least one default shop so foreign keys never fail
   // on a fresh installation. This is idempotent and safe in production.
@@ -92,6 +149,26 @@ async function start() {
       setDefaultShopId(first.id);
       // eslint-disable-next-line no-console
       console.log(`Using existing shop id=${first.id} as default SHOP_ID`);
+    }
+  }
+
+  // Ensure initial admin user exists when auth is enabled.
+  if (process.env.AUTH_ENABLED === '1') {
+    const userCount = await User.count();
+    if (userCount === 0 && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+      const bcrypt = require('bcryptjs');
+      const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+      const admin = await User.create({
+        shop_id: Number(process.env.SHOP_ID) || (await Shop.findOne({ order: [['id', 'ASC']] })).id,
+        email: process.env.ADMIN_EMAIL.toLowerCase().trim(),
+        password_hash: hash,
+        role: 'admin',
+        is_active: true,
+        verified: true,
+        settings: {},
+      });
+      // eslint-disable-next-line no-console
+      console.log(`Created initial admin user ${admin.email} (id=${admin.id})`);
     }
   }
 

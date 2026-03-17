@@ -21,28 +21,28 @@ const get = wrap(async (req, res) => {
 
 const create = wrap(async (req, res) => {
   const shopId = getShopId(req);
-  const data = await itemService.createItem(shopId, req.body);
+  const data = await itemService.createItem(shopId, req.body, req.userId);
   res.status(201).json({ data });
 });
 
 const update = wrap(async (req, res) => {
   const shopId = getShopId(req);
   const id = Number(req.params.id);
-  const data = await itemService.updateItem(shopId, id, req.body);
+  const data = await itemService.updateItem(shopId, id, req.body, req.userId);
   res.json({ data });
 });
 
 const addStock = wrap(async (req, res) => {
   const shopId = getShopId(req);
   const id = Number(req.params.id);
-  const data = await itemService.addStock(shopId, id, req.body);
+  const data = await itemService.addStock(shopId, id, req.body, req.userId);
   res.json({ data });
 });
 
 const remove = wrap(async (req, res) => {
   const shopId = getShopId(req);
   const id = Number(req.params.id);
-  const data = await itemService.deleteItem(shopId, id);
+  const data = await itemService.deleteItem(shopId, id, req.userId);
   res.json({ data });
 });
 

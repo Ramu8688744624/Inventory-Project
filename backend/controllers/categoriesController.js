@@ -10,21 +10,21 @@ const list = wrap(async (req, res) => {
 
 const create = wrap(async (req, res) => {
   const shopId = getShopId(req);
-  const data = await categoryService.createCategory(shopId, req.body);
+  const data = await categoryService.createCategory(shopId, req.body, req.userId);
   res.status(201).json({ data });
 });
 
 const update = wrap(async (req, res) => {
   const shopId = getShopId(req);
   const id = Number(req.params.id);
-  const data = await categoryService.updateCategory(shopId, id, req.body);
+  const data = await categoryService.updateCategory(shopId, id, req.body, req.userId);
   res.json({ data });
 });
 
 const remove = wrap(async (req, res) => {
   const shopId = getShopId(req);
   const id = Number(req.params.id);
-  const data = await categoryService.deleteCategory(shopId, id);
+  const data = await categoryService.deleteCategory(shopId, id, req.userId);
   res.json({ data });
 });
 

@@ -96,6 +96,10 @@ export default function SalesPosPage() {
     return { total, profit }
   }, [cart])
 
+  const updateCartItem = (idx, updates) => {
+    setCart((prev) => prev.map((item, i) => (i === idx ? { ...item, ...updates } : item)))
+  }
+
   const submit = async () => {
     if (cart.length === 0) return
     setSaving(true)
@@ -125,8 +129,12 @@ export default function SalesPosPage() {
           <p className="pageSubtitle">Search → select → qty → price (optional discount) → save</p>
         </div>
         <div className="actionGroup">
-          <span className="pill">Total: {money(totals.total)}</span>
-          <span className="pill pillOk">Profit: {money(totals.profit)}</span>
+          <span
+            className="pill"
+            style={{ fontSize: '1.13rem', fontWeight: 700, padding: '0.4rem 0.85rem', lineHeight: 1 }}
+          >
+            Total: {money(totals.total)}
+          </span>
           <button className="btn btnPrimary" onClick={submit} disabled={saving || cart.length === 0}>
             Save Sale
           </button>
@@ -199,7 +207,7 @@ export default function SalesPosPage() {
                   {selected.item_name} <span className="muted">{selected.model}</span>
                 </strong>
                 <p className="muted" style={{ margin: '4px 0 0 0', fontSize: '0.9375rem' }}>
-                  Stock: {selected.quantity} • Cost: {money(selected.cost_price)} • Default: {money(selected.selling_price)}
+                  Stock: {selected.quantity}
                 </p>
               </div>
 
@@ -242,23 +250,47 @@ export default function SalesPosPage() {
                 <th>Qty</th>
                 <th>Price</th>
                 <th>Total</th>
-                <th>Profit</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {cart.map((c, idx) => {
                 const lineTotal = Number(c.selling_price_each) * Number(c.quantity)
-                const lineProfit = (Number(c.selling_price_each) - Number(c.cost_price)) * Number(c.quantity)
                 return (
                   <tr key={`${c.item_id}-${idx}`}>
                     <td>
                       {c.item_name} <span className="muted">{c.model}</span>
                     </td>
-                    <td>{c.quantity}</td>
-                    <td>{money(c.selling_price_each)}</td>
+                    <td>
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        value={c.quantity}
+                        onChange={(e) => {
+                          const newQty = Number(e.target.value)
+                          if (!Number.isFinite(newQty) || newQty < 1) return
+                          updateCartItem(idx, { quantity: newQty })
+                        }}
+                        style={{ width: 80 }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        className="input"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={c.selling_price_each}
+                        onChange={(e) => {
+                          const newPrice = Number(e.target.value)
+                          if (!Number.isFinite(newPrice) || newPrice <= 0) return
+                          updateCartItem(idx, { selling_price_each: newPrice })
+                        }}
+                        style={{ width: 100 }}
+                      />
+                    </td>
                     <td>{money(lineTotal)}</td>
-                    <td className="muted">{money(lineProfit)}</td>
                     <td>
                       <button
                         className="btn btnSm btnDanger"

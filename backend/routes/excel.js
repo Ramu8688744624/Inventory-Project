@@ -15,7 +15,11 @@ const upload = multer({
 });
 
 router.post('/import/inventory', upload.single('file'), controller.importInventory);
+router.post('/import/categories', upload.single('file'), controller.importCategories);
 router.get('/export/inventory', controller.exportInventory);
+router.get('/export/categories', controller.exportCategories);
+router.get('/export/inventory-template', controller.exportInventoryTemplate);
+router.get('/export/categories-template', controller.exportCategoriesTemplate);
 
 module.exports = router;
 

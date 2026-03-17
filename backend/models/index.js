@@ -8,6 +8,12 @@ const StockMovement = require('./stockMovement')(sequelize);
 const Sale = require('./sale')(sequelize);
 const SaleItem = require('./saleItem')(sequelize);
 const ServiceIncome = require('./serviceIncome')(sequelize);
+const CategoryHistory = require('./categoryHistory')(sequelize);
+const ItemHistory = require('./itemHistory')(sequelize);
+const SaleHistory = require('./saleHistory')(sequelize);
+const ServiceIncomeHistory = require('./serviceIncomeHistory')(sequelize);
+const User = require('./user')(sequelize);
+const AuthToken = require('./authToken')(sequelize);
 
 // Associations
 Shop.hasMany(Category, { foreignKey: 'shop_id' });
@@ -39,6 +45,11 @@ SaleItem.belongsTo(Category, { foreignKey: 'category_id' });
 Shop.hasMany(ServiceIncome, { foreignKey: 'shop_id' });
 ServiceIncome.belongsTo(Shop, { foreignKey: 'shop_id' });
 
+Shop.hasMany(User, { foreignKey: 'shop_id' });
+User.belongsTo(Shop, { foreignKey: 'shop_id' });
+User.hasMany(AuthToken, { foreignKey: 'user_id' });
+AuthToken.belongsTo(User, { foreignKey: 'user_id' });
+
 module.exports = {
   sequelize,
   Shop,
@@ -49,5 +60,11 @@ module.exports = {
   Sale,
   SaleItem,
   ServiceIncome,
+  CategoryHistory,
+  ItemHistory,
+  SaleHistory,
+  ServiceIncomeHistory,
+  User,
+  AuthToken,
 };
 

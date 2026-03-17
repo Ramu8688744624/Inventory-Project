@@ -86,3 +86,15 @@ Base URL: `http://localhost:5000/api`
 - `POST /excel/import/inventory` (multipart form-data: `file` = `.xlsx`)
 - `GET /excel/export/inventory` (downloads `.xlsx`)
 
+### Backup & Restore
+- `GET /backup/export` (downloads `inventory-backup.json`)
+- `POST /backup/import` (body: JSON backup; replaces shop data)
+
+### Auth (optional, when `AUTH_ENABLED=1`)
+- `POST /auth/register` `{ email, password }`
+- `POST /auth/login` `{ email, password }`
+- `POST /auth/verify-email` `{ token }`
+- `POST /auth/forgot-password` `{ email }`
+- `POST /auth/reset-password` `{ token, newPassword }`
+- `GET /auth/config` (returns `{ authEnabled }`)
+

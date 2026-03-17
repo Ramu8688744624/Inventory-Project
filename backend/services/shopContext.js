@@ -8,6 +8,8 @@ function setDefaultShopId(id) {
 }
 
 function getShopId(req) {
+  if (req?.shopId != null && Number.isFinite(Number(req.shopId))) return Number(req.shopId);
+
   const header = req?.header?.('x-shop-id');
   const fromHeader = header ? Number(header) : NaN;
   if (Number.isFinite(fromHeader) && fromHeader > 0) return fromHeader;

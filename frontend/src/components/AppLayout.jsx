@@ -1,8 +1,11 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, getErrorMessage } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
+import { AUTH_ENABLED } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 import Toast from './Toast'
+import PageTitle from './PageTitle'
 
 function useClickOutside(ref, handler) {
   useEffect(() => {
@@ -28,9 +31,14 @@ function useDebounced(value, delayMs) {
   return debounced
 }
 
+const MOBILE_BREAKPOINT = 900
+
 export default function AppLayout() {
   const navigate = useNavigate()
+  const { logout, token } = useAuth()
+  const location = useLocation()
   const [toast, setToast] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const [q, setQ] = useState('')
   const debouncedQ = useDebounced(q, 150)
@@ -39,6 +47,12 @@ export default function AppLayout() {
   const activeReq = useRef(0)
   const searchRef = useRef(null)
   useClickOutside(searchRef, () => setSearchOpen(false))
+
+  useEffect(() => {
+    if (AUTH_ENABLED && !token) {
+      navigate('/login', { replace: true })
+    }
+  }, [token, location.pathname, navigate])
 
   useEffect(() => {
     const term = String(debouncedQ || '').trim()
@@ -76,9 +90,24 @@ export default function AppLayout() {
     []
   )
 
+  const closeMenu = () => setMenuOpen(false)
+
   return (
     <div className="appShell">
-      <aside className="sidebar">
+      <PageTitle />
+      <button
+        type="button"
+        className="menuToggle"
+        onClick={() => setMenuOpen((o) => !o)}
+        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={menuOpen}
+      >
+        <span className="menuToggleBar" />
+        <span className="menuToggleBar" />
+        <span className="menuToggleBar" />
+      </button>
+      <div className={`sidebarOverlay ${menuOpen ? 'sidebarOverlayOpen' : ''}`} onClick={closeMenu} aria-hidden="true" />
+      <aside className={`sidebar ${menuOpen ? 'sidebarOpen' : ''}`}>
         <div className="brand">
           <div>
             <div className="brandTitle">{shopConfig.name}</div>
@@ -92,6 +121,7 @@ export default function AppLayout() {
             <NavLink
               key={n.to}
               to={n.to}
+              onClick={closeMenu}
               className={({ isActive }) =>
                 `navItem ${isActive ? 'navItemActive' : ''}`
               }
@@ -160,6 +190,17 @@ export default function AppLayout() {
             <button className="btn btnPrimary" onClick={() => navigate('/sales-pos')}>
               New Sale
             </button>
+            {AUTH_ENABLED && (
+              <button
+                className="btn"
+                onClick={() => {
+                  logout()
+                  navigate('/login', { replace: true })
+                }}
+              >
+                Logout
+              </button>
+            )}
           </div>
         </div>
 

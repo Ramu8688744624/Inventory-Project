@@ -4,7 +4,7 @@ const svc = require('../services/serviceIncomeService');
 
 const create = wrap(async (req, res) => {
   const shopId = getShopId(req);
-  const data = await svc.createServiceIncome(shopId, req.body);
+  const data = await svc.createServiceIncome(shopId, req.body, req.userId);
   res.status(201).json({ data });
 });
 
@@ -22,7 +22,7 @@ const list = wrap(async (req, res) => {
 const remove = wrap(async (req, res) => {
   const shopId = getShopId(req);
   const id = Number(req.params.id);
-  const data = await svc.deleteServiceIncome(shopId, id);
+  const data = await svc.deleteServiceIncome(shopId, id, req.userId);
   res.json({ data });
 });
 

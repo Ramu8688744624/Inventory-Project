@@ -1,15 +1,43 @@
 import { useEffect, useState, useMemo } from 'react'
-import { api, getErrorMessage } from '../services/api'
+import { api, getErrorMessage, AUTH_ENABLED } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
+import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../components/useToast'
 
 export default function StockPage() {
   const setToast = useToast()
+  const { user } = useAuth()
   const [categories, setCategories] = useState([])
   const [categoryId, setCategoryId] = useState('')
   const [rows, setRows] = useState([])
 
+  const defaultColumns = ['item', 'model', 'category', 'qty', 'selling', 'total_stock_value']
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    if (AUTH_ENABLED && user?.settings?.stockColumns?.length) {
+      return user.settings.stockColumns
+    }
+    if (!AUTH_ENABLED) {
+      const saved = localStorage.getItem('stock_columns')
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed)) return parsed
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+    return defaultColumns
+  })
+
   const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
+
+
+  useEffect(() => {
+    if (AUTH_ENABLED && user?.settings?.stockColumns) {
+      setVisibleColumns(user.settings.stockColumns)
+    }
+  }, [AUTH_ENABLED, user])
 
   const categoryOptions = useMemo(() => {
     const list = (categories || []).filter((c) => c.name && c.name.trim())
@@ -22,6 +50,26 @@ export default function StockPage() {
       .then((r) => setCategories(r.data?.data || []))
       .catch((e) => setToast(getErrorMessage(e)))
   }, [setToast])
+
+  const saveColumnPreferences = async (nextCols) => {
+    setVisibleColumns(nextCols)
+    if (AUTH_ENABLED && user?.id) {
+      try {
+        await api.patch('/auth/settings', { stockColumns: nextCols })
+      } catch (e) {
+        setToast(getErrorMessage(e))
+      }
+    } else {
+      localStorage.setItem('stock_columns', JSON.stringify(nextCols))
+    }
+  }
+
+  const toggleColumn = (col) => {
+    const next = visibleColumns.includes(col)
+      ? visibleColumns.filter((c) => c !== col)
+      : [...visibleColumns, col]
+    saveColumnPreferences(next)
+  }
 
   const load = () =>
     api
@@ -54,6 +102,7 @@ export default function StockPage() {
               </option>
             ))}
           </select>
+
           <button className="btn" onClick={load}>
             Refresh
           </button>
@@ -65,36 +114,38 @@ export default function StockPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Item</th>
-                <th>Model</th>
-                <th>Category</th>
-                <th>Qty</th>
-                <th>Cost</th>
-                <th>Selling</th>
-                <th>Total Stock Value</th>
+                {visibleColumns.includes('item') && <th>Item</th>}
+                {visibleColumns.includes('model') && <th>Model</th>}
+                {visibleColumns.includes('category') && <th>Category</th>}
+                {visibleColumns.includes('qty') && <th>Qty</th>}
+                {visibleColumns.includes('cost') && <th>Cost</th>}
+                {visibleColumns.includes('selling') && <th>Selling</th>}
+                {visibleColumns.includes('total_stock_value') && <th>Total Stock Value</th>}
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id}>
-                  <td>{r.item_name}</td>
-                  <td className="muted">{r.model}</td>
-                  <td className="muted">{r.category?.name}</td>
-                  <td>
-                    {r.quantity === 0 ? (
-                      <span className="pill pillDanger">0</span>
-                    ) : (
-                      <span className="pill">{r.quantity}</span>
-                    )}
-                  </td>
-                  <td className="muted">{money(r.cost_price)}</td>
-                  <td>{money(r.selling_price)}</td>
-                  <td>{money(r.total_stock_value)}</td>
+                  {visibleColumns.includes('item') && <td>{r.item_name}</td>}
+                  {visibleColumns.includes('model') && <td className="muted">{r.model}</td>}
+                  {visibleColumns.includes('category') && <td className="muted">{r.category?.name}</td>}
+                  {visibleColumns.includes('qty') && (
+                    <td>
+                      {r.quantity === 0 ? (
+                        <span className="pill pillDanger">0</span>
+                      ) : (
+                        <span className="pill">{r.quantity}</span>
+                      )}
+                    </td>
+                  )}
+                  {visibleColumns.includes('cost') && <td className="muted">{money(r.cost_price)}</td>}
+                  {visibleColumns.includes('selling') && <td>{money(r.selling_price)}</td>}
+                  {visibleColumns.includes('total_stock_value') && <td>{money(r.total_stock_value)}</td>}
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="emptyCell">
+                  <td colSpan={Math.max(visibleColumns.length, 1)} className="emptyCell">
                     No items
                   </td>
                 </tr>
