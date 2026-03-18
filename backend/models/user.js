@@ -4,8 +4,8 @@ module.exports = (sequelize) =>
   sequelize.define(
     'users',
     {
-      id: { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
-      shop_id: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      shop_id: { type: DataTypes.BIGINT, allowNull: false },
       email: { type: DataTypes.STRING(255), allowNull: false },
       password_hash: { type: DataTypes.STRING(255), allowNull: false },
       verified: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },

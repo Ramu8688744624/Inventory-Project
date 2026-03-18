@@ -4,9 +4,9 @@ module.exports = (sequelize) =>
   sequelize.define(
     'items',
     {
-      id: { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
-      shop_id: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
-      category_id: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      shop_id: { type: DataTypes.BIGINT, allowNull: false },
+      category_id: { type: DataTypes.BIGINT, allowNull: false },
       item_name: { type: DataTypes.STRING(120), allowNull: false },
       model: { type: DataTypes.STRING(120), allowNull: false },
       cost_price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },

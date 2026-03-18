@@ -4,7 +4,7 @@ module.exports = (sequelize) =>
   sequelize.define(
     'shops',
     {
-      id: { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
       name: { type: DataTypes.STRING(120), allowNull: false },
       city: { type: DataTypes.STRING(80), allowNull: true },
       state: { type: DataTypes.STRING(80), allowNull: true },

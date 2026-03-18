@@ -1,28 +1,41 @@
 const { Sequelize } = require('sequelize');
 
 const {
+  DATABASE_URL,
   DB_HOST = 'localhost',
-  DB_PORT = '3306',
+  DB_PORT = '5432',
   DB_NAME,
   DB_USER,
   DB_PASS,
   NODE_ENV = 'development',
 } = process.env;
 
-if (!DB_NAME || !DB_USER) {
-  throw new Error('Missing DB_NAME or DB_USER in environment variables.');
+if (!DATABASE_URL && (!DB_NAME || !DB_USER)) {
+  throw new Error('Missing DATABASE_URL or DB_NAME/DB_USER in environment variables.');
 }
 
-const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS || '', {
-  host: DB_HOST,
-  port: Number(DB_PORT),
-  dialect: 'mysql',
+const sequelizeConfig = {
+  dialect: 'postgres',
   logging: NODE_ENV === 'development' ? false : false,
   define: {
     underscored: true,
     freezeTableName: true,
   },
-});
+  pool: {
+    max: 20,
+    min: 0,
+    acquire: 30000,
+    idle: 10000,
+  },
+};
+
+const sequelize = DATABASE_URL
+  ? new Sequelize(DATABASE_URL, sequelizeConfig)
+  : new Sequelize(DB_NAME, DB_USER, DB_PASS || '', {
+      ...sequelizeConfig,
+      host: DB_HOST,
+      port: Number(DB_PORT),
+    });
 
 module.exports = { sequelize };
 

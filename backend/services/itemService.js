@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const { sequelize, Item, Category, StockMovement, SaleItem, ItemHistory } = require('../models');
 const { AppError } = require('./errors');
 
-async function listItems(shopId, { categoryId, q, includeInactive } = {}) {
+async function listItems(shopId, { categoryId, q, includeInactive, page = 1, pageSize = 10 } = {}) {
   const where = { shop_id: shopId };
   if (categoryId) where.category_id = Number(categoryId);
   if (!includeInactive) where.is_active = true;
@@ -13,14 +13,21 @@ async function listItems(shopId, { categoryId, q, includeInactive } = {}) {
       { model: { [Op.like]: `%${term}%` } },
     ];
   }
-  return Item.findAll({
+  const limit = Math.min(100, Math.max(1, Number(pageSize) || 10));
+  const offset = (Math.max(1, Number(page) || 1) - 1) * limit;
+
+  const result = await Item.findAndCountAll({
     where,
     include: [{ model: Category, attributes: ['id', 'name'] }],
     order: [
       ['item_name', 'ASC'],
       ['model', 'ASC'],
     ],
+    limit,
+    offset,
   });
+
+  return { rows: result.rows, count: result.count };
 }
 
 async function getItem(shopId, id) {

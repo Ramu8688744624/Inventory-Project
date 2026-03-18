@@ -10,19 +10,25 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState([])
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalCount, setTotalCount] = useState(0)
 
   const [confirmState, setConfirmState] = useState({ open: false, cat: null })
   const [promptState, setPromptState] = useState({ open: false, cat: null, value: '' })
 
   const load = () =>
     api
-      .get('/categories')
-      .then((res) => setCategories(res.data?.data || []))
+      .get('/categories', { params: { page, pageSize } })
+      .then((res) => {
+        setCategories(res.data?.data || [])
+        setTotalCount(res.data?.meta?.count || 0)
+      })
       .catch((e) => setToast(getErrorMessage(e)))
 
   useEffect(() => {
     load()
-  }, [])
+  }, [page, pageSize])
 
   const sorted = useMemo(() => categories.slice().sort((a, b) => a.name.localeCompare(b.name)), [categories])
 
@@ -179,6 +185,29 @@ export default function CategoriesPage() {
             </tbody>
           </table>
         </div>
+
+        <div className="paginationRow">
+          <div>
+            <label>
+              Rows per page:
+              <select value={pageSize} onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}>
+                {[10, 20, 50, 100].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div>
+            <span>{totalCount} total</span>
+            <button className="btn btnSm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
+            <button className="btn btnSm" disabled={page * pageSize >= totalCount} onClick={() => setPage((p) => p + 1)}>Next</button>
+            <span>Page {page}</span>
+          </div>
+        </div>
+
         <p className="cardNote">A category cannot be deleted if items exist in it.</p>
       </section>
 

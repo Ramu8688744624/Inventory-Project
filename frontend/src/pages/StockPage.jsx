@@ -8,6 +8,9 @@ export default function StockPage() {
   const [categories, setCategories] = useState([])
   const [categoryId, setCategoryId] = useState('')
   const [rows, setRows] = useState([])
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalCount, setTotalCount] = useState(0)
 
   const defaultColumns = ['item', 'model', 'category', 'qty', 'selling', 'total_stock_value']
   const [visibleColumns, setVisibleColumns] = useState(() => {
@@ -51,13 +54,16 @@ export default function StockPage() {
 
   const load = () =>
     api
-      .get('/reports/stock', { params: { categoryId: categoryId || undefined } })
-      .then((r) => setRows(r.data?.data || []))
+      .get('/reports/stock', { params: { categoryId: categoryId || undefined, page, pageSize } })
+      .then((r) => {
+        setRows(r.data?.data || [])
+        setTotalCount(r.data?.meta?.count || 0)
+      })
       .catch((e) => setToast(getErrorMessage(e)))
 
   useEffect(() => {
     load()
-  }, [categoryId])
+  }, [categoryId, page, pageSize])
 
   return (
     <div className="page">
@@ -88,6 +94,24 @@ export default function StockPage() {
       </header>
 
       <section className="card cardSection">
+        <div className="paginationRow">
+          <div>
+            <label>
+              Rows per page:
+              <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>
+                {[10, 20, 50, 100].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div>
+            <span>{totalCount} total</span>
+            <button className="btn btnSm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
+            <button className="btn btnSm" disabled={page >= Math.ceil(totalCount / pageSize)} onClick={() => setPage((p) => p + 1)}>Next</button>
+            <span>Page {page}</span>
+          </div>
+        </div>
         <div className="tableWrap">
           <table className="table">
             <thead>

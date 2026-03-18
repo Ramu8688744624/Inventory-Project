@@ -4,8 +4,8 @@ module.exports = (sequelize) =>
   sequelize.define(
     'shop_labels',
     {
-      id: { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
-      shop_id: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      shop_id: { type: DataTypes.BIGINT, allowNull: false },
       label_key: { type: DataTypes.STRING(64), allowNull: false },
       label_value: { type: DataTypes.STRING(255), allowNull: false },
     },

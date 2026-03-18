@@ -2,11 +2,16 @@ const { Op } = require('sequelize');
 const { Category, Item, CategoryHistory } = require('../models');
 const { AppError } = require('./errors');
 
-async function listCategories(shopId) {
-  return Category.findAll({
+async function listCategories(shopId, { page = 1, pageSize = 10 } = {}) {
+  const limit = Math.min(100, Math.max(1, Number(pageSize) || 10));
+  const offset = (Math.max(1, Number(page) || 1) - 1) * limit;
+  const result = await Category.findAndCountAll({
     where: { shop_id: shopId },
     order: [['name', 'ASC']],
+    limit,
+    offset,
   });
+  return { rows: result.rows, count: result.count };
 }
 
 async function createCategory(shopId, { name }, userId = null) {

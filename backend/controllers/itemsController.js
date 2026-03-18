@@ -4,12 +4,16 @@ const itemService = require('../services/itemService');
 
 const list = wrap(async (req, res) => {
   const shopId = getShopId(req);
-  const data = await itemService.listItems(shopId, {
+  const page = Number(req.query.page) || 1;
+  const pageSize = Number(req.query.pageSize) || 10;
+  const { rows, count } = await itemService.listItems(shopId, {
     categoryId: req.query.categoryId,
     q: req.query.q,
     includeInactive: req.query.includeInactive === 'true',
+    page,
+    pageSize,
   });
-  res.json({ data });
+  res.json({ data: rows, meta: { count, page, pageSize } });
 });
 
 const get = wrap(async (req, res) => {

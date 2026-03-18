@@ -27,12 +27,14 @@ async function createSale(shopId, payload, userId = null) {
 
       const item = await Item.findOne({
         where: { id: itemId, shop_id: shopId },
-        include: [{ model: Category, attributes: ['id', 'name'] }],
         transaction: t,
         lock: t.LOCK.UPDATE,
       });
       if (!item) throw new AppError(`Item not found: ${itemId}`, 404);
       if (item.quantity < quantity) throw new AppError(`Insufficient stock for ${item.item_name} ${item.model}.`, 409);
+
+      const category = await Category.findByPk(item.category_id, { transaction: t });
+      const categoryName = category ? category.name : '';
 
       const spEach = Number.isFinite(sellingPriceEach) ? sellingPriceEach : Number(item.selling_price);
       const cpEach = Number(item.cost_price);
@@ -48,7 +50,7 @@ async function createSale(shopId, payload, userId = null) {
           category_id: item.category_id,
           item_name_snapshot: item.item_name,
           model_snapshot: item.model,
-          category_name_snapshot: item.category ? item.category.name : '',
+          category_name_snapshot: categoryName,
           quantity,
           cost_price_at_sale: cpEach,
           selling_price_each: spEach,

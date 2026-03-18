@@ -4,11 +4,11 @@ module.exports = (sequelize) =>
   sequelize.define(
     'sale_items',
     {
-      id: { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
-      sale_id: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
-      shop_id: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
-      item_id: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
-      category_id: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      sale_id: { type: DataTypes.BIGINT, allowNull: false },
+      shop_id: { type: DataTypes.BIGINT, allowNull: false },
+      item_id: { type: DataTypes.BIGINT, allowNull: false },
+      category_id: { type: DataTypes.BIGINT, allowNull: false },
       item_name_snapshot: { type: DataTypes.STRING(120), allowNull: false },
       model_snapshot: { type: DataTypes.STRING(120), allowNull: false },
       category_name_snapshot: { type: DataTypes.STRING(80), allowNull: false },

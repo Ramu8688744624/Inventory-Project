@@ -98,12 +98,12 @@ async function start() {
       const desc = await qi.describeTable(cfg.table);
       if (!desc.original_id) {
         await qi.addColumn(cfg.table, 'original_id', {
-          type: DataTypes.BIGINT.UNSIGNED,
+          type: DataTypes.BIGINT,
           allowNull: false,
           defaultValue: 0,
         });
         if (desc[cfg.oldId]) {
-          await sequelize.query('UPDATE `' + cfg.table + '` SET original_id = `' + cfg.oldId + '`');
+          await sequelize.query(`UPDATE "${cfg.table}" SET original_id = "${cfg.oldId}"`);
         }
       }
       if (!desc.data_snapshot) {

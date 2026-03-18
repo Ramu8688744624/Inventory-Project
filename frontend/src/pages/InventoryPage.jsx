@@ -14,6 +14,9 @@ export default function InventoryPage() {
   const [items, setItems] = useState([])
   const [filterCategoryId, setFilterCategoryId] = useState('')
   const [q, setQ] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalCount, setTotalCount] = useState(0)
 
   const [form, setForm] = useState({
     category_id: '',
@@ -40,8 +43,11 @@ export default function InventoryPage() {
 
   const loadItems = () =>
     api
-      .get('/items', { params: { categoryId: filterCategoryId || undefined, q: q || undefined } })
-      .then((res) => setItems(res.data?.data || []))
+      .get('/items', { params: { categoryId: filterCategoryId || undefined, q: q || undefined, page, pageSize } })
+      .then((res) => {
+        setItems(res.data?.data || [])
+        setTotalCount(res.data?.meta?.count || 0)
+      })
       .catch((e) => setToast(getErrorMessage(e)))
 
   useEffect(() => {
@@ -50,7 +56,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     loadItems()
-  }, [filterCategoryId])
+  }, [filterCategoryId, q, page, pageSize])
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase()
@@ -344,7 +350,40 @@ export default function InventoryPage() {
             </button>
           </div>
         </div>
-        <p className="muted cardMeta">Showing {filtered.length} items</p>
+        <p className="muted cardMeta">
+          Showing {filtered.length} of {totalCount} items
+          (page {page} of {Math.max(1, Math.ceil(totalCount / pageSize))})
+        </p>
+        <div className="paginationRow">
+          <div>
+            <label>
+              Rows per page:
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+              >
+                {[10, 20, 50, 100].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div>
+            <button className="btn btnSm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+              Prev
+            </button>
+            <button
+              className="btn btnSm"
+              disabled={page >= Math.ceil(totalCount / pageSize)}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </div>
         <div className="tableWrap">
           <table className="table">
             <thead>

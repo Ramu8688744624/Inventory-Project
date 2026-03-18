@@ -4,8 +4,10 @@ const categoryService = require('../services/categoryService');
 
 const list = wrap(async (req, res) => {
   const shopId = getShopId(req);
-  const data = await categoryService.listCategories(shopId);
-  res.json({ data });
+  const page = Number(req.query.page) || 1;
+  const pageSize = Number(req.query.pageSize) || 10;
+  const { rows, count } = await categoryService.listCategories(shopId, { page, pageSize });
+  res.json({ data: rows, meta: { count, page, pageSize } });
 });
 
 const create = wrap(async (req, res) => {

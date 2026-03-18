@@ -10,20 +10,30 @@ const dashboard = wrap(async (req, res) => {
 
 const stock = wrap(async (req, res) => {
   const shopId = getShopId(req);
-  const data = await reports.stockList(shopId, { categoryId: req.query.categoryId });
-  res.json({ data });
+  const page = Number(req.query.page) || 1;
+  const pageSize = Number(req.query.pageSize) || 10;
+  const { rows, count } = await reports.stockList(shopId, {
+    categoryId: req.query.categoryId,
+    page,
+    pageSize,
+  });
+  res.json({ data: rows, meta: { count, page, pageSize } });
 });
 
 const outOfStock = wrap(async (req, res) => {
   const shopId = getShopId(req);
-  const data = await reports.outOfStock(shopId);
-  res.json({ data });
+  const page = Number(req.query.page) || 1;
+  const pageSize = Number(req.query.pageSize) || 10;
+  const { rows, count } = await reports.outOfStock(shopId, { page, pageSize });
+  res.json({ data: rows, meta: { count, page, pageSize } });
 });
 
 const lowStock = wrap(async (req, res) => {
   const shopId = getShopId(req);
-  const data = await reports.lowStock(shopId);
-  res.json({ data });
+  const page = Number(req.query.page) || 1;
+  const pageSize = Number(req.query.pageSize) || 10;
+  const { rows, count } = await reports.lowStock(shopId, { page, pageSize });
+  res.json({ data: rows, meta: { count, page, pageSize } });
 });
 
 const profitSummary = wrap(async (req, res) => {

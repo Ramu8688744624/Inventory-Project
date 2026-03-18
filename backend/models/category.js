@@ -4,8 +4,8 @@ module.exports = (sequelize) =>
   sequelize.define(
     'categories',
     {
-      id: { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
-      shop_id: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false },
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+      shop_id: { type: DataTypes.BIGINT, allowNull: false },
       name: { type: DataTypes.STRING(80), allowNull: false },
       is_active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     },

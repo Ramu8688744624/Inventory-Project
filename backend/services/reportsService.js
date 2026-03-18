@@ -41,7 +41,7 @@ async function dashboard(shopId) {
     `
     SELECT COALESCE(SUM(i.quantity * i.cost_price), 0) AS stock_value
     FROM items i
-    WHERE i.shop_id = :shopId AND i.is_active = 1
+    WHERE i.shop_id = :shopId AND i.is_active = TRUE
     `,
     { replacements: { shopId }, type: sequelize.QueryTypes.SELECT }
   );
@@ -74,17 +74,22 @@ async function dashboard(shopId) {
   };
 }
 
-async function stockList(shopId, { categoryId } = {}) {
+async function stockList(shopId, { categoryId, page = 1, pageSize = 10 } = {}) {
   const where = { shop_id: shopId, is_active: true };
   if (categoryId) where.category_id = Number(categoryId);
 
-  const items = await Item.findAll({
+  const limit = Math.min(100, Math.max(1, Number(pageSize) || 10));
+  const offset = (Math.max(1, Number(page) || 1) - 1) * limit;
+
+  const { rows, count } = await Item.findAndCountAll({
     where,
     include: [{ model: Category, attributes: ['id', 'name'] }],
     order: [['item_name', 'ASC'], ['model', 'ASC']],
+    limit,
+    offset,
   });
 
-  return items.map((i) => {
+  const payload = rows.map((i) => {
     const qty = Number(i.quantity);
     const cp = Number(i.cost_price);
     const sp = Number(i.selling_price);
@@ -99,24 +104,36 @@ async function stockList(shopId, { categoryId } = {}) {
       total_stock_value: qty * cp,
     };
   });
+
+  return { rows: payload, count };
 }
 
-async function outOfStock(shopId) {
-  return Item.findAll({
+async function outOfStock(shopId, { page = 1, pageSize = 10 } = {}) {
+  const limit = Math.min(100, Math.max(1, Number(pageSize) || 10));
+  const offset = (Math.max(1, Number(page) || 1) - 1) * limit;
+  const { rows, count } = await Item.findAndCountAll({
     where: { shop_id: shopId, is_active: true, quantity: 0 },
     include: [{ model: Category, attributes: ['id', 'name'] }],
     order: [['item_name', 'ASC'], ['model', 'ASC']],
+    limit,
+    offset,
   });
+  return { rows, count };
 }
 
-async function lowStock(shopId) {
+async function lowStock(shopId, { page = 1, pageSize = 10 } = {}) {
   const shop = await getShopSettings(shopId);
   const lowThreshold = Number(shop.low_stock_threshold) || 2;
-  return Item.findAll({
+  const limit = Math.min(100, Math.max(1, Number(pageSize) || 10));
+  const offset = (Math.max(1, Number(page) || 1) - 1) * limit;
+  const { rows, count } = await Item.findAndCountAll({
     where: { shop_id: shopId, is_active: true, quantity: { [Op.gt]: 0, [Op.lte]: lowThreshold } },
     include: [{ model: Category, attributes: ['id', 'name'] }],
     order: [['quantity', 'ASC'], ['item_name', 'ASC'], ['model', 'ASC']],
+    limit,
+    offset,
   });
+  return { rows, count };
 }
 
 async function profitSummary(shopId, { filter, from, to } = {}) {
