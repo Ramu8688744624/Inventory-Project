@@ -30,7 +30,7 @@ const sequelizeConfig = {
   },
   dialectOptions: {
     ssl:
-      process.env.DB_SSL === 'true' || (DATABASE_URL && DATABASE_URL.includes('sslmode=require'))
+      process.env.DB_SSL === 'true' || NODE_ENV === 'production' || (DATABASE_URL && DATABASE_URL.includes('sslmode=require'))
         ? {
             require: true,
             rejectUnauthorized: false,
