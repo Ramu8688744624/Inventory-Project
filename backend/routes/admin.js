@@ -1,10 +1,8 @@
 const express = require('express');
 const controller = require('../controllers/adminController');
-const { requireAdmin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.use(requireAdmin);
 router.get('/users', controller.listUsers);
 router.post('/users', controller.createUser);
 router.patch('/reset-password', controller.resetPassword);

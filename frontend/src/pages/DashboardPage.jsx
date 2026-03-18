@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react'
-import { api, getErrorMessage, AUTH_ENABLED } from '../services/api'
+import { api, getErrorMessage } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
-import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../components/useToast'
 
 export default function DashboardPage() {
-  const { user } = useAuth()
   const setToast = useToast()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -19,12 +17,8 @@ export default function DashboardPage() {
       .catch((e) => setToast(getErrorMessage(e)))
       .finally(() => setLoading(false))
 
-    if (AUTH_ENABLED && user?.settings?.showFinancialData !== undefined) {
-      setShowValues(Boolean(user.settings.showFinancialData))
-    } else {
-      setShowValues(localStorage.getItem('showFinancialData') === 'true')
-    }
-  }, [setToast, user])
+    setShowValues(localStorage.getItem('showFinancialData') === 'true')
+  }, [setToast])
 
   const masked = `${shopConfig.currencySymbol} ****`
   const money = (v) => (showValues ? `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}` : masked)

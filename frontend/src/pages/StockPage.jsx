@@ -1,43 +1,29 @@
 import { useEffect, useState, useMemo } from 'react'
-import { api, getErrorMessage, AUTH_ENABLED } from '../services/api'
+import { api, getErrorMessage } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
-import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../components/useToast'
 
 export default function StockPage() {
   const setToast = useToast()
-  const { user } = useAuth()
   const [categories, setCategories] = useState([])
   const [categoryId, setCategoryId] = useState('')
   const [rows, setRows] = useState([])
 
   const defaultColumns = ['item', 'model', 'category', 'qty', 'selling', 'total_stock_value']
   const [visibleColumns, setVisibleColumns] = useState(() => {
-    if (AUTH_ENABLED && user?.settings?.stockColumns?.length) {
-      return user.settings.stockColumns
-    }
-    if (!AUTH_ENABLED) {
-      const saved = localStorage.getItem('stock_columns')
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed)) return parsed
-        } catch (e) {
-          // ignore
-        }
+    const saved = localStorage.getItem('stock_columns')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) return parsed
+      } catch {
+        // ignore
       }
     }
     return defaultColumns
   })
 
   const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
-
-
-  useEffect(() => {
-    if (AUTH_ENABLED && user?.settings?.stockColumns) {
-      setVisibleColumns(user.settings.stockColumns)
-    }
-  }, [AUTH_ENABLED, user])
 
   const categoryOptions = useMemo(() => {
     const list = (categories || []).filter((c) => c.name && c.name.trim())
@@ -53,15 +39,7 @@ export default function StockPage() {
 
   const saveColumnPreferences = async (nextCols) => {
     setVisibleColumns(nextCols)
-    if (AUTH_ENABLED && user?.id) {
-      try {
-        await api.patch('/auth/settings', { stockColumns: nextCols })
-      } catch (e) {
-        setToast(getErrorMessage(e))
-      }
-    } else {
-      localStorage.setItem('stock_columns', JSON.stringify(nextCols))
-    }
+    localStorage.setItem('stock_columns', JSON.stringify(nextCols))
   }
 
   const toggleColumn = (col) => {

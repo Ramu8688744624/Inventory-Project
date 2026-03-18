@@ -18,9 +18,7 @@ const servicesRoutes = require('./routes/services');
 const reportsRoutes = require('./routes/reports');
 const excelRoutes = require('./routes/excel');
 const backupRoutes = require('./routes/backup');
-const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
-const { requireAuth } = require('./middleware/authMiddleware');
 
 const app = express();
 
@@ -44,8 +42,14 @@ app.use(
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-app.use('/api/auth', authRoutes);
-app.use(requireAuth);
+app.use((req, res, next) => {
+  req.user = { id: 1, shop_id: 1, role: 'admin' };
+  req.userId = 1;
+  req.userShopId = 1;
+  req.userRole = 'admin';
+  if (!req.shopId) req.shopId = 1;
+  next();
+});
 
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/items', itemsRoutes);
@@ -152,24 +156,18 @@ async function start() {
     }
   }
 
-  // Ensure initial admin user exists when auth is enabled.
-  if (process.env.AUTH_ENABLED === '1') {
-    const userCount = await User.count();
-    if (userCount === 0 && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
-      const bcrypt = require('bcryptjs');
-      const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
-      const admin = await User.create({
-        shop_id: Number(process.env.SHOP_ID) || (await Shop.findOne({ order: [['id', 'ASC']] })).id,
-        email: process.env.ADMIN_EMAIL.toLowerCase().trim(),
-        password_hash: hash,
-        role: 'admin',
-        is_active: true,
-        verified: true,
-        settings: {},
-      });
-      // eslint-disable-next-line no-console
-      console.log(`Created initial admin user ${admin.email} (id=${admin.id})`);
-    }
+  // No auth required in single-user mode, still keep default admin user row if combined with existing user table.
+  const userCount = await User.count();
+  if (userCount === 0) {
+    await User.create({
+      shop_id: Number(process.env.SHOP_ID) || (await Shop.findOne({ order: [['id', 'ASC']] })).id,
+      email: 'admin@example.com',
+      password_hash: 'noauth',
+      role: 'admin',
+      is_active: true,
+      verified: true,
+      settings: {}
+    });
   }
 
   app.listen(PORT, () => {

@@ -2,8 +2,6 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, getErrorMessage } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
-import { AUTH_ENABLED } from '../services/api'
-import { useAuth } from '../contexts/AuthContext'
 import Toast from './Toast'
 import PageTitle from './PageTitle'
 
@@ -35,7 +33,6 @@ const MOBILE_BREAKPOINT = 900
 
 export default function AppLayout() {
   const navigate = useNavigate()
-  const { logout, token } = useAuth()
   const location = useLocation()
   const [toast, setToast] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -47,12 +44,6 @@ export default function AppLayout() {
   const activeReq = useRef(0)
   const searchRef = useRef(null)
   useClickOutside(searchRef, () => setSearchOpen(false))
-
-  useEffect(() => {
-    if (AUTH_ENABLED && !token) {
-      navigate('/login', { replace: true })
-    }
-  }, [token, location.pathname, navigate])
 
   useEffect(() => {
     const term = String(debouncedQ || '').trim()
@@ -190,17 +181,16 @@ export default function AppLayout() {
             <button className="btn btnPrimary" onClick={() => navigate('/sales-pos')}>
               New Sale
             </button>
-            {AUTH_ENABLED && (
-              <button
-                className="btn"
-                onClick={() => {
-                  logout()
-                  navigate('/login', { replace: true })
-                }}
-              >
-                Logout
-              </button>
-            )}
+            <button
+              className="btn btnDanger"
+              onClick={() => {
+                localStorage.clear()
+                sessionStorage.clear()
+                window.location.reload()
+              }}
+            >
+              Reset Application Data
+            </button>
           </div>
         </div>
 
