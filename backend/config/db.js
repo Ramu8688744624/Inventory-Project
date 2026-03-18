@@ -16,6 +16,7 @@ if (!DATABASE_URL && (!DB_NAME || !DB_USER)) {
 
 const sequelizeConfig = {
   dialect: 'postgres',
+  protocol: 'postgres',
   logging: NODE_ENV === 'development' ? false : false,
   define: {
     underscored: true,
@@ -26,6 +27,15 @@ const sequelizeConfig = {
     min: 0,
     acquire: 30000,
     idle: 10000,
+  },
+  dialectOptions: {
+    ssl:
+      process.env.DB_SSL === 'true' || (DATABASE_URL && DATABASE_URL.includes('sslmode=require'))
+        ? {
+            require: true,
+            rejectUnauthorized: false,
+          }
+        : false,
   },
 };
 

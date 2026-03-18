@@ -23,12 +23,14 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: 'http://localhost:5173' }));
+// For production on Vercel/Supabase connect use origin passed via env var (set FRONTEND_URL) or allow all safe cross-origin from expected frontends
+const allowedOrigin = process.env.FRONTEND_URL || process.env.CORS_ORIGIN || '*';
+app.use(cors({ origin: allowedOrigin }));
 app.use((req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store')
-  res.setHeader('Pragma', 'no-cache')
-  next()
-})
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Pragma', 'no-cache');
+  next();
+});
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
 app.use(
@@ -80,6 +82,17 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = Number(process.env.PORT || 5000);
+
+// Setup global error logging for stability in production
+process.on('uncaughtException', (err) => {
+  // eslint-disable-next-line no-console
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  // eslint-disable-next-line no-console
+  console.error('Unhandled Rejection:', reason);
+});
 
 async function start() {
   await sequelize.authenticate();
@@ -172,7 +185,7 @@ async function start() {
 
   app.listen(PORT, () => {
     // eslint-disable-next-line no-console
-    console.log(`Backend running on http://localhost:${PORT}`);
+    console.log(`Backend running on port ${PORT}${allowedOrigin ? ' with CORS=' + allowedOrigin : ''}`);
   });
 }
 
