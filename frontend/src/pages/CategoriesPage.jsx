@@ -3,6 +3,7 @@ import { api, getErrorMessage } from '../services/api'
 import { downloadBlob } from '../services/download'
 import { useToast } from '../components/useToast'
 import ConfirmDialog from '../components/ConfirmDialog'
+import PaginationControls from '../components/PaginationControls'
 import PromptDialog from '../components/PromptDialog'
 
 export default function CategoriesPage() {
@@ -186,27 +187,16 @@ export default function CategoriesPage() {
           </table>
         </div>
 
-        <div className="paginationRow">
-          <div>
-            <label>
-              Rows per page:
-              <select value={pageSize} onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setPage(1);
-              }}>
-                {[10, 20, 50, 100].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div>
-            <span>{totalCount} total</span>
-            <button className="btn btnSm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
-            <button className="btn btnSm" disabled={page * pageSize >= totalCount} onClick={() => setPage((p) => p + 1)}>Next</button>
-            <span>Page {page}</span>
-          </div>
-        </div>
+        <PaginationControls
+          total={totalCount}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size)
+            setPage(1)
+          }}
+        />
 
         <p className="cardNote">A category cannot be deleted if items exist in it.</p>
       </section>

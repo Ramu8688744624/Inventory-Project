@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { api, getErrorMessage } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
 import { useToast } from '../components/useToast'
+import PaginationControls from '../components/PaginationControls'
 
 export default function StockPage() {
   const setToast = useToast()
@@ -94,24 +95,6 @@ export default function StockPage() {
       </header>
 
       <section className="card cardSection">
-        <div className="paginationRow">
-          <div>
-            <label>
-              Rows per page:
-              <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>
-                {[10, 20, 50, 100].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div>
-            <span>{totalCount} total</span>
-            <button className="btn btnSm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
-            <button className="btn btnSm" disabled={page >= Math.ceil(totalCount / pageSize)} onClick={() => setPage((p) => p + 1)}>Next</button>
-            <span>Page {page}</span>
-          </div>
-        </div>
         <div className="tableWrap">
           <table className="table">
             <thead>
@@ -155,6 +138,17 @@ export default function StockPage() {
             </tbody>
           </table>
         </div>
+
+        <PaginationControls
+          total={totalCount}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size)
+            setPage(1)
+          }}
+        />
       </section>
     </div>
   )

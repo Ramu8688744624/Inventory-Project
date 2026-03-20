@@ -7,6 +7,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import PromptDialog from '../components/PromptDialog'
 import AlertDialog from '../components/AlertDialog'
 import EditPricesModal from '../components/EditPricesModal'
+import PaginationControls from '../components/PaginationControls'
 
 export default function InventoryPage() {
   const setToast = useToast()
@@ -354,36 +355,6 @@ export default function InventoryPage() {
           Showing {filtered.length} of {totalCount} items
           (page {page} of {Math.max(1, Math.ceil(totalCount / pageSize))})
         </p>
-        <div className="paginationRow">
-          <div>
-            <label>
-              Rows per page:
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setPage(1);
-                }}
-              >
-                {[10, 20, 50, 100].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div>
-            <button className="btn btnSm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-              Prev
-            </button>
-            <button
-              className="btn btnSm"
-              disabled={page >= Math.ceil(totalCount / pageSize)}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </div>
         <div className="tableWrap">
           <table className="table">
             <thead>
@@ -440,6 +411,17 @@ export default function InventoryPage() {
             </tbody>
           </table>
         </div>
+
+        <PaginationControls
+          total={totalCount}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size)
+            setPage(1)
+          }}
+        />
       </section>
 
       <ConfirmDialog

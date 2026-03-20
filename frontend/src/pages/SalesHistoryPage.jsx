@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { api, getErrorMessage } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
 import { useToast } from '../components/useToast'
+import PaginationControls from '../components/PaginationControls'
 
 function ymd(d) {
   return d.toISOString().slice(0, 10)
@@ -13,6 +14,8 @@ export default function SalesHistoryPage() {
   const [from, setFrom] = useState(ymd(new Date()))
   const [to, setTo] = useState(ymd(new Date()))
   const [sales, setSales] = useState([])
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
 
@@ -51,6 +54,13 @@ export default function SalesHistoryPage() {
     out.sort((a, b) => b.soldAt - a.soldAt)
     return out
   }, [sales])
+
+  useEffect(() => {
+    setPage(1)
+  }, [rows, pageSize])
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
+  const visibleRows = rows.slice((page - 1) * pageSize, page * pageSize)
 
   return (
     <div className="page">
@@ -109,7 +119,7 @@ export default function SalesHistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {visibleRows.map((r) => (
                 <tr key={r.id}>
                   <td className="muted">{r.soldAt.toLocaleString()}</td>
                   <td>{r.item}</td>
@@ -129,6 +139,17 @@ export default function SalesHistoryPage() {
             </tbody>
           </table>
         </div>
+
+        <PaginationControls
+          total={rows.length}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size)
+            setPage(1)
+          }}
+        />
       </section>
     </div>
   )
