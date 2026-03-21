@@ -8,8 +8,9 @@ export default function SettingsPage() {
   const [shopCity, setShopCity] = useState(shopConfig.city)
   const [currency, setCurrency] = useState(shopConfig.currencySymbol)
   const [showFinancialData, setShowFinancialData] = useState(localStorage.getItem('showFinancialData') === 'true')
-  const [stockColumns, setStockColumns] = useState(() => {
-    const saved = localStorage.getItem('stock_columns')
+
+  const loadColumns = (key, defaultColumns) => {
+    const saved = localStorage.getItem(key)
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
@@ -18,8 +19,24 @@ export default function SettingsPage() {
         // ignore
       }
     }
-    return ['item', 'model', 'category', 'qty', 'selling', 'total_stock_value']
-  })
+    return defaultColumns
+  }
+
+  const [stockColumns, setStockColumns] = useState(() =>
+    loadColumns('stock_columns', ['item', 'model', 'category', 'qty', 'cost', 'selling', 'total_stock_value'])
+  )
+  const [inventoryColumns, setInventoryColumns] = useState(() =>
+    loadColumns('inventory_columns', ['item', 'model', 'category', 'qty', 'cost', 'selling', 'actions'])
+  )
+  const [salesColumns, setSalesColumns] = useState(() =>
+    loadColumns('sales_history_columns', ['date', 'item', 'category', 'qty', 'selling', 'profit'])
+  )
+  const [profitCategoryColumns, setProfitCategoryColumns] = useState(() =>
+    loadColumns('profit_category_columns', ['category', 'qty', 'sales', 'profit'])
+  )
+  const [profitItemColumns, setProfitItemColumns] = useState(() =>
+    loadColumns('profit_item_columns', ['item', 'qty', 'sales', 'profit'])
+  )
 
   useEffect(() => {
     const savedShop = localStorage.getItem('shop_config')
@@ -48,10 +65,16 @@ export default function SettingsPage() {
     setToast('Financial visibility pref saved')
   }
 
-  const saveStockColumns = () => {
-    localStorage.setItem('stock_columns', JSON.stringify(stockColumns))
-    setToast('Stock columns saved')
+  const saveColumns = (key, columns, message) => {
+    localStorage.setItem(key, JSON.stringify(columns))
+    setToast(message)
   }
+
+  const saveStockColumns = () => saveColumns('stock_columns', stockColumns, 'Stock columns saved')
+  const saveInventoryColumns = () => saveColumns('inventory_columns', inventoryColumns, 'Inventory columns saved')
+  const saveSalesColumns = () => saveColumns('sales_history_columns', salesColumns, 'Sales history columns saved')
+  const saveProfitCategoryColumns = () => saveColumns('profit_category_columns', profitCategoryColumns, 'Profit category columns saved')
+  const saveProfitItemColumns = () => saveColumns('profit_item_columns', profitItemColumns, 'Profit item columns saved')
 
   return (
     <div className="page">
@@ -149,7 +172,140 @@ export default function SettingsPage() {
         </div>
         <div className="actionGroup" style={{ marginTop: 12 }}>
           <button className="btn btnPrimary" onClick={saveStockColumns}>
-            Save column settings
+            Save stock columns
+          </button>
+        </div>
+      </section>
+
+      <section className="card cardSection">
+        <div className="cardTitle">Inventory table columns</div>
+        <p className="muted">Set which columns are visible in inventory list.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8 }}>
+          {[
+            { id: 'item', label: 'Item' },
+            { id: 'model', label: 'Model' },
+            { id: 'category', label: 'Category' },
+            { id: 'qty', label: 'Qty' },
+            { id: 'cost', label: 'Cost' },
+            { id: 'selling', label: 'Selling' },
+            { id: 'actions', label: 'Actions' },
+          ].map((col) => (
+            <label key={col.id} style={{ display: 'block', fontSize: 14 }}>
+              <input
+                type="checkbox"
+                checked={inventoryColumns.includes(col.id)}
+                onChange={() => {
+                  const next = inventoryColumns.includes(col.id)
+                    ? inventoryColumns.filter((c) => c !== col.id)
+                    : [...inventoryColumns, col.id]
+                  setInventoryColumns(next)
+                }}
+              />{' '}
+              {col.label}
+            </label>
+          ))}
+        </div>
+        <div className="actionGroup" style={{ marginTop: 12 }}>
+          <button className="btn btnPrimary" onClick={saveInventoryColumns}>
+            Save inventory columns
+          </button>
+        </div>
+      </section>
+
+      <section className="card cardSection">
+        <div className="cardTitle">Sales history table columns</div>
+        <p className="muted">Set which columns are visible in sales history.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8 }}>
+          {[
+            { id: 'date', label: 'Date' },
+            { id: 'item', label: 'Item' },
+            { id: 'category', label: 'Category' },
+            { id: 'qty', label: 'Qty' },
+            { id: 'selling', label: 'Selling' },
+            { id: 'profit', label: 'Profit' },
+          ].map((col) => (
+            <label key={col.id} style={{ display: 'block', fontSize: 14 }}>
+              <input
+                type="checkbox"
+                checked={salesColumns.includes(col.id)}
+                onChange={() => {
+                  const next = salesColumns.includes(col.id)
+                    ? salesColumns.filter((c) => c !== col.id)
+                    : [...salesColumns, col.id]
+                  setSalesColumns(next)
+                }}
+              />{' '}
+              {col.label}
+            </label>
+          ))}
+        </div>
+        <div className="actionGroup" style={{ marginTop: 12 }}>
+          <button className="btn btnPrimary" onClick={saveSalesColumns}>
+            Save sales history columns
+          </button>
+        </div>
+      </section>
+
+      <section className="card cardSection">
+        <div className="cardTitle">Profit report columns (category)</div>
+        <p className="muted">Set visible columns for category profit table.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8 }}>
+          {[
+            { id: 'category', label: 'Category' },
+            { id: 'qty', label: 'Qty' },
+            { id: 'sales', label: 'Sales' },
+            { id: 'profit', label: 'Profit' },
+          ].map((col) => (
+            <label key={col.id} style={{ display: 'block', fontSize: 14 }}>
+              <input
+                type="checkbox"
+                checked={profitCategoryColumns.includes(col.id)}
+                onChange={() => {
+                  const next = profitCategoryColumns.includes(col.id)
+                    ? profitCategoryColumns.filter((c) => c !== col.id)
+                    : [...profitCategoryColumns, col.id]
+                  setProfitCategoryColumns(next)
+                }}
+              />{' '}
+              {col.label}
+            </label>
+          ))}
+        </div>
+        <div className="actionGroup" style={{ marginTop: 12 }}>
+          <button className="btn btnPrimary" onClick={saveProfitCategoryColumns}>
+            Save profit category columns
+          </button>
+        </div>
+      </section>
+
+      <section className="card cardSection">
+        <div className="cardTitle">Profit report columns (item)</div>
+        <p className="muted">Set visible columns for item profit table.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8 }}>
+          {[
+            { id: 'item', label: 'Item' },
+            { id: 'qty', label: 'Qty' },
+            { id: 'sales', label: 'Sales' },
+            { id: 'profit', label: 'Profit' },
+          ].map((col) => (
+            <label key={col.id} style={{ display: 'block', fontSize: 14 }}>
+              <input
+                type="checkbox"
+                checked={profitItemColumns.includes(col.id)}
+                onChange={() => {
+                  const next = profitItemColumns.includes(col.id)
+                    ? profitItemColumns.filter((c) => c !== col.id)
+                    : [...profitItemColumns, col.id]
+                  setProfitItemColumns(next)
+                }}
+              />{' '}
+              {col.label}
+            </label>
+          ))}
+        </div>
+        <div className="actionGroup" style={{ marginTop: 12 }}>
+          <button className="btn btnPrimary" onClick={saveProfitItemColumns}>
+            Save profit item columns
           </button>
         </div>
       </section>

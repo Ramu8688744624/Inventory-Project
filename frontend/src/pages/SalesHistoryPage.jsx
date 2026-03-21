@@ -17,6 +17,20 @@ export default function SalesHistoryPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
+  const defaultSalesColumns = ['date', 'item', 'category', 'qty', 'selling', 'profit']
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    const saved = localStorage.getItem('sales_history_columns')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length) return parsed
+      } catch {
+        // ignore
+      }
+    }
+    return defaultSalesColumns
+  })
+
   const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
 
   const load = () =>
@@ -110,28 +124,28 @@ export default function SalesHistoryPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Item</th>
-                <th>Category</th>
-                <th>Qty</th>
-                <th>Selling</th>
-                <th>Profit</th>
+                {visibleColumns.includes('date') && <th>Date</th>}
+                {visibleColumns.includes('item') && <th>Item</th>}
+                {visibleColumns.includes('category') && <th>Category</th>}
+                {visibleColumns.includes('qty') && <th>Qty</th>}
+                {visibleColumns.includes('selling') && <th>Selling</th>}
+                {visibleColumns.includes('profit') && <th>Profit</th>}
               </tr>
             </thead>
             <tbody>
               {visibleRows.map((r) => (
                 <tr key={r.id}>
-                  <td className="muted">{r.soldAt.toLocaleString()}</td>
-                  <td>{r.item}</td>
-                  <td className="muted">{r.category}</td>
-                  <td>{r.qty}</td>
-                  <td>{money(r.selling)}</td>
-                  <td className="muted">{money(r.profit)}</td>
+                  {visibleColumns.includes('date') && <td className="muted">{r.soldAt.toLocaleString()}</td>}
+                  {visibleColumns.includes('item') && <td>{r.item}</td>}
+                  {visibleColumns.includes('category') && <td className="muted">{r.category}</td>}
+                  {visibleColumns.includes('qty') && <td>{r.qty}</td>}
+                  {visibleColumns.includes('selling') && <td>{money(r.selling)}</td>}
+                  {visibleColumns.includes('profit') && <td className="muted">{money(r.profit)}</td>}
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="emptyCell">
+                  <td colSpan={visibleColumns.length || 1} className="emptyCell">
                     No sales found
                   </td>
                 </tr>

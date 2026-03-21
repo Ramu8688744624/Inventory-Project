@@ -17,7 +17,7 @@ module.exports = (sequelize) =>
     {
       timestamps: true,
       indexes: [
-        { unique: true, fields: ['shop_id', 'item_name', 'model'] },
+        { unique: true, fields: ['shop_id', 'category_id', 'item_name', 'model'] },
         { fields: ['shop_id', 'item_name'] },
         { fields: ['shop_id', 'model'] },
         { fields: ['category_id'] },

@@ -13,9 +13,36 @@ export default function ProfitReportsPage() {
   const [from, setFrom] = useState(ymd(new Date()))
   const [to, setTo] = useState(ymd(new Date()))
 
+  const defaultProfitCategoryColumns = ['category', 'qty', 'sales', 'profit']
+  const defaultProfitItemColumns = ['item', 'qty', 'sales', 'profit']
+
   const [summary, setSummary] = useState(null)
   const [byCategory, setByCategory] = useState([])
   const [byItem, setByItem] = useState([])
+  const [visibleCategoryColumns, setVisibleCategoryColumns] = useState(() => {
+    const saved = localStorage.getItem('profit_category_columns')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length) return parsed
+      } catch {
+        // ignore
+      }
+    }
+    return defaultProfitCategoryColumns
+  })
+  const [visibleItemColumns, setVisibleItemColumns] = useState(() => {
+    const saved = localStorage.getItem('profit_item_columns')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length) return parsed
+      } catch {
+        // ignore
+      }
+    }
+    return defaultProfitItemColumns
+  })
 
   const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
 
@@ -119,24 +146,24 @@ export default function ProfitReportsPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Category</th>
-                  <th>Qty</th>
-                  <th>Sales</th>
-                  <th>Profit</th>
+                  {visibleCategoryColumns.includes('category') && <th>Category</th>}
+                  {visibleCategoryColumns.includes('qty') && <th>Qty</th>}
+                  {visibleCategoryColumns.includes('sales') && <th>Sales</th>}
+                  {visibleCategoryColumns.includes('profit') && <th>Profit</th>}
                 </tr>
               </thead>
               <tbody>
                 {byCategory.map((r) => (
                   <tr key={r.category_id}>
-                    <td>{r.category_name}</td>
-                    <td className="muted">{r.quantity}</td>
-                    <td>{money(r.sales)}</td>
-                    <td className="muted">{money(r.profit)}</td>
+                    {visibleCategoryColumns.includes('category') && <td>{r.category_name}</td>}
+                    {visibleCategoryColumns.includes('qty') && <td className="muted">{r.quantity}</td>}
+                    {visibleCategoryColumns.includes('sales') && <td>{money(r.sales)}</td>}
+                    {visibleCategoryColumns.includes('profit') && <td className="muted">{money(r.profit)}</td>}
                   </tr>
                 ))}
                 {byCategory.length === 0 && (
                   <tr>
-                    <td colSpan="4" className="emptyCell">
+                    <td colSpan={visibleCategoryColumns.length || 1} className="emptyCell">
                       No data
                     </td>
                   </tr>
@@ -152,26 +179,28 @@ export default function ProfitReportsPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>Sales</th>
-                  <th>Profit</th>
+                  {visibleItemColumns.includes('item') && <th>Item</th>}
+                  {visibleItemColumns.includes('qty') && <th>Qty</th>}
+                  {visibleItemColumns.includes('sales') && <th>Sales</th>}
+                  {visibleItemColumns.includes('profit') && <th>Profit</th>}
                 </tr>
               </thead>
               <tbody>
                 {byItem.map((r) => (
                   <tr key={r.item_id}>
-                    <td>
-                      {r.item_name} <span className="muted">{r.model}</span>
-                    </td>
-                    <td className="muted">{r.quantity}</td>
-                    <td>{money(r.sales)}</td>
-                    <td className="muted">{money(r.profit)}</td>
+                    {visibleItemColumns.includes('item') && (
+                      <td>
+                        {r.item_name} <span className="muted">{r.model}</span>
+                      </td>
+                    )}
+                    {visibleItemColumns.includes('qty') && <td className="muted">{r.quantity}</td>}
+                    {visibleItemColumns.includes('sales') && <td>{money(r.sales)}</td>}
+                    {visibleItemColumns.includes('profit') && <td className="muted">{money(r.profit)}</td>}
                   </tr>
                 ))}
                 {byItem.length === 0 && (
                   <tr>
-                    <td colSpan="4" className="emptyCell">
+                    <td colSpan={visibleItemColumns.length || 1} className="emptyCell">
                       No data
                     </td>
                   </tr>

@@ -19,6 +19,20 @@ export default function InventoryPage() {
   const [pageSize, setPageSize] = useState(10)
   const [totalCount, setTotalCount] = useState(0)
 
+  const defaultInventoryColumns = ['item', 'model', 'category', 'qty', 'cost', 'selling', 'actions']
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    const saved = localStorage.getItem('inventory_columns')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length) return parsed
+      } catch {
+        // ignore
+      }
+    }
+    return defaultInventoryColumns
+  })
+
   const [form, setForm] = useState({
     category_id: '',
     item_name: '',
@@ -359,51 +373,55 @@ export default function InventoryPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Item</th>
-                <th>Model</th>
-                <th>Category</th>
-                <th>Qty</th>
-                <th>Cost</th>
-                <th>Selling</th>
-                <th className="colActions">Actions</th>
+                {visibleColumns.includes('item') && <th>Item</th>}
+                {visibleColumns.includes('model') && <th>Model</th>}
+                {visibleColumns.includes('category') && <th>Category</th>}
+                {visibleColumns.includes('qty') && <th>Qty</th>}
+                {visibleColumns.includes('cost') && <th>Cost</th>}
+                {visibleColumns.includes('selling') && <th>Selling</th>}
+                {visibleColumns.includes('actions') && <th className="colActions">Actions</th>}
               </tr>
             </thead>
             <tbody>
               {filtered.map((it) => (
                 <tr key={it.id}>
-                  <td>{it.item_name}</td>
-                  <td className="muted">{it.model}</td>
-                  <td className="muted">{it.category?.name}</td>
-                  <td>
-                    {it.quantity === 0 ? (
-                      <span className="pill pillDanger">0</span>
-                    ) : (
-                      <span className="pill">{it.quantity}</span>
-                    )}
-                  </td>
-                  <td className="muted">{money(it.cost_price)}</td>
-                  <td>{money(it.selling_price)}</td>
-                  <td>
-                    <div className="actionGroup actionGroupWrap">
-                      <button className="btn btnSm" onClick={() => addStock(it)}>
-                        Add stock
-                      </button>
-                      <button className="btn btnSm" onClick={() => editItem(it)}>
-                        Edit prices
-                      </button>
-                      <button className="btn btnSm" onClick={() => viewItemSales(it)}>
-                        Item sales
-                      </button>
-                      <button className="btn btnSm btnDanger" onClick={() => removeItem(it)}>
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+                  {visibleColumns.includes('item') && <td>{it.item_name}</td>}
+                  {visibleColumns.includes('model') && <td className="muted">{it.model}</td>}
+                  {visibleColumns.includes('category') && <td className="muted">{it.category?.name}</td>}
+                  {visibleColumns.includes('qty') && (
+                    <td>
+                      {it.quantity === 0 ? (
+                        <span className="pill pillDanger">0</span>
+                      ) : (
+                        <span className="pill">{it.quantity}</span>
+                      )}
+                    </td>
+                  )}
+                  {visibleColumns.includes('cost') && <td className="muted">{money(it.cost_price)}</td>}
+                  {visibleColumns.includes('selling') && <td>{money(it.selling_price)}</td>}
+                  {visibleColumns.includes('actions') && (
+                    <td>
+                      <div className="actionGroup actionGroupWrap">
+                        <button className="btn btnSm" onClick={() => addStock(it)}>
+                          Add stock
+                        </button>
+                        <button className="btn btnSm" onClick={() => editItem(it)}>
+                          Edit prices
+                        </button>
+                        <button className="btn btnSm" onClick={() => viewItemSales(it)}>
+                          Item sales
+                        </button>
+                        <button className="btn btnSm btnDanger" onClick={() => removeItem(it)}>
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="emptyCell">
+                  <td colSpan={visibleColumns.length || 1} className="emptyCell">
                     No items found
                   </td>
                 </tr>

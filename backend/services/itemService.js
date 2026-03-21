@@ -9,8 +9,8 @@ async function listItems(shopId, { categoryId, q, includeInactive, page = 1, pag
   if (q) {
     const term = String(q).trim();
     where[Op.or] = [
-      { item_name: { [Op.like]: `%${term}%` } },
-      { model: { [Op.like]: `%${term}%` } },
+      { item_name: { [Op.iLike]: `%${term}%` } },
+      { model: { [Op.iLike]: `%${term}%` } },
     ];
   }
   const limit = Math.min(100, Math.max(1, Number(pageSize) || 10));
@@ -60,11 +60,14 @@ async function createItem(shopId, payload, userId = null) {
   const existing = await Item.findOne({
     where: {
       shop_id: shopId,
-      item_name,
-      model,
+      category_id,
+      [Op.and]: [
+        sequelize.where(sequelize.fn('LOWER', sequelize.col('item_name')), item_name.toLowerCase()),
+        sequelize.where(sequelize.fn('LOWER', sequelize.col('model')), model.toLowerCase()),
+      ],
     },
   });
-  if (existing) throw new AppError('Item with same name and model already exists in this shop.', 409);
+  if (existing) throw new AppError('Item with same name and model already exists in this category.', 409);
 
   return sequelize.transaction(async (t) => {
     const item = await Item.create(
@@ -133,18 +136,21 @@ async function updateItem(shopId, id, payload, userId = null) {
     item.model = v;
   }
 
-  // Ensure unique item within shop by name+model
+  // Ensure unique item within category by name+model (case-insensitive)
   if (item.item_name && item.model) {
     const existing = await Item.findOne({
       where: {
         shop_id: shopId,
-        item_name: item.item_name,
-        model: item.model,
+        category_id: item.category_id,
         id: { [Op.ne]: item.id },
+        [Op.and]: [
+          sequelize.where(sequelize.fn('LOWER', sequelize.col('item_name')), item.item_name.toLowerCase()),
+          sequelize.where(sequelize.fn('LOWER', sequelize.col('model')), item.model.toLowerCase()),
+        ],
       },
     });
     if (existing) {
-      throw new AppError('Item with same name and model already exists in this shop.', 409);
+      throw new AppError('Item with same name and model already exists in this category.', 409);
     }
   }
 

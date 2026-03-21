@@ -26,11 +26,22 @@
   box-sizing: border-box;
 }
 
+html, body, #root {
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   color: var(--text);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Screen reader only */
@@ -67,7 +78,7 @@ button, input, select, textarea {
   position: fixed;
   top: 14px;
   left: 14px;
-  z-index: 100;
+  z-index: 1100;
   width: 48px;
   height: 48px;
   padding: 0;
@@ -96,7 +107,7 @@ button, input, select, textarea {
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 98;
+  z-index: 1040;
   background: rgba(0,0,0,0.75); /* stronger dark overlay for mobile menu */
   opacity: 0;
   pointer-events: none;
@@ -109,14 +120,15 @@ button, input, select, textarea {
 
 .sidebar {
   border-right: 1px solid rgba(255,255,255,0.12);
-  background: rgba(9,15,30,0.95);
+  background: linear-gradient(135deg, rgba(9,15,30,0.95) 0%, rgba(15,26,46,0.95) 100%);
   backdrop-filter: blur(16px);
   padding: 14px 12px;
   transition: transform var(--ease-slow), background var(--ease);
+  z-index: 1050;
 }
 
 @media (max-width: 900px) {
-  .appShell { grid-template-columns: 1fr; }
+  .appShell { grid-template-columns: 1fr; min-height: 100vh; overflow-x: hidden; }
   .menuToggle { display: flex; }
   .sidebarOverlay { display: block; }
   .sidebar {
@@ -126,7 +138,7 @@ button, input, select, textarea {
     bottom: 0;
     width: 280px;
     max-width: 85vw;
-    z-index: 99;
+    z-index: 1050;
     transform: translateX(-100%);
     overflow-y: auto;
     box-shadow: 4px 0 24px rgba(0,0,0,0.4);
@@ -141,7 +153,20 @@ button, input, select, textarea {
     background: rgba(15, 23, 40, 0.9);
     backdrop-filter: blur(2px);
   }
+
+  .topbar {
+    margin-top: 72px;
+    z-index: 1010;
+    position: relative;
+  }
+
+  .searchBox {
+    width: 100%;
+    max-width: calc(100% - 24px);
+    margin-top: 6px;
+  }
 }
+
 
 .brand {
   display: flex;
@@ -238,14 +263,23 @@ button, input, select, textarea {
 @media (max-width: 900px) {
   .grid2, .grid3 {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .card {
+    min-height: 120px;
+    padding: 10px;
+    border-radius: 10px;
   }
 }
 
 .card {
-  background: rgba(15, 26, 46, 0.65);
-  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 100%;
+  background: rgba(15, 26, 46, 0.82);
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: 14px;
   padding: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
 }
 
 .cardTitle {
@@ -562,10 +596,10 @@ button, input, select, textarea {
   .pageHeader { flex-direction: column; align-items: stretch; }
   .cardHeader { flex-direction: column; align-items: stretch; }
   .filterRow { width: 100%; }
-  .table th, .table td { padding: 12px 10px; font-size: 0.9375rem; }
+  .table th, .table td { padding: 8px 6px; font-size: 0.9375rem; word-break: break-word; }
   .actionGroupWrap { flex-direction: row; flex-wrap: wrap; gap: 8px; }
   .colActions { min-width: 200px; }
-  .main { padding: 14px; }
+  .main { padding: 8px; }
   .modalContent { padding: 20px; max-height: 85vh; }
   .modalOverlay { padding: 12px; }
 }

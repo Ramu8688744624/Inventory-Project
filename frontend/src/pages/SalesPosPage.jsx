@@ -9,6 +9,8 @@ export default function SalesPosPage() {
   const location = useLocation()
 
   const [search, setSearch] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+  const [categories, setCategories] = useState([])
   const [results, setResults] = useState([])
   const [selected, setSelected] = useState(null)
   const [qty, setQty] = useState(1)
@@ -19,6 +21,25 @@ export default function SalesPosPage() {
 
   const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
 
+  const categoryOptions = useMemo(() => {
+    const list = (categories || []).filter((c) => c.name && c.name.trim())
+    return list.sort((a, b) => a.name.localeCompare(b.name))
+  }, [categories])
+
+  useEffect(() => {
+    api
+      .get('/categories')
+      .then((r) => setCategories(r.data?.data || []))
+      .catch((e) => setToast(getErrorMessage(e)))
+  }, [setToast])
+
+  useEffect(() => {
+    setResults([])
+    setSelected(null)
+    setPrice('')
+    setQty(1)
+  }, [categoryId])
+
   useEffect(() => {
     const term = search.trim()
     if (!term) {
@@ -27,12 +48,12 @@ export default function SalesPosPage() {
     }
     const t = setTimeout(() => {
       api
-        .get('/items', { params: { q: term } })
+        .get('/items', { params: { q: term, categoryId: categoryId || undefined } })
         .then((res) => setResults((res.data?.data || []).slice(0, 12)))
         .catch((e) => setToast(getErrorMessage(e)))
     }, 120)
     return () => clearTimeout(t)
-  }, [search, setToast])
+  }, [search, categoryId, setToast])
 
   useEffect(() => {
     const pre = location.state?.preselectItemId
@@ -144,13 +165,28 @@ export default function SalesPosPage() {
       <div className="grid2">
         <section className="card cardSection">
           <h2 className="cardTitle">1) Search item</h2>
-          <input
-            className="input"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Type item name or model"
-            aria-label="Search items"
-          />
+          <div className="filterRow">
+            <select
+              className="select selectSm"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              aria-label="Filter by category"
+            >
+              <option value="">All categories</option>
+              {categoryOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <input
+              className="input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Type item name or model"
+              aria-label="Search items"
+            />
+          </div>
           <div className="tableWrap" style={{ marginTop: 12 }}>
           <table className="table">
             <thead>
