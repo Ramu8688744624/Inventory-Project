@@ -128,7 +128,12 @@ button, input, select, textarea {
 }
 
 @media (max-width: 900px) {
-  .appShell { grid-template-columns: 1fr; min-height: 100vh; overflow-x: hidden; }
+  .appShell { 
+    grid-template-columns: 1fr; 
+    min-height: 100vh; 
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
   .menuToggle { display: flex; }
   .sidebarOverlay { display: block; }
   .sidebar {
@@ -147,11 +152,13 @@ button, input, select, textarea {
 
   .main {
     margin-top: 0;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 12px;
+    padding-right: 12px;
     min-height: 100vh;
     background: rgba(15, 23, 40, 0.9);
     backdrop-filter: blur(2px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .topbar {
@@ -164,6 +171,16 @@ button, input, select, textarea {
     width: 100%;
     max-width: calc(100% - 24px);
     margin-top: 6px;
+  }
+
+  .grid2, .grid3 {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .card {
+    min-height: 100px;
+    padding: 12px;
+    border-radius: 10px;
   }
 }
 
@@ -254,11 +271,15 @@ button, input, select, textarea {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .grid3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 @media (max-width: 900px) {
   .grid2, .grid3 {
@@ -266,8 +287,8 @@ button, input, select, textarea {
     gap: 8px;
   }
   .card {
-    min-height: 120px;
-    padding: 10px;
+    min-height: 100px;
+    padding: 12px;
     border-radius: 10px;
   }
 }
@@ -280,6 +301,10 @@ button, input, select, textarea {
   border-radius: 14px;
   padding: 14px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  box-sizing: border-box;
+  overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .cardTitle {
@@ -399,6 +424,9 @@ button, input, select, textarea {
 .page {
   padding: 0;
   background: transparent;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 .card {
   background: rgba(18, 33, 64, 0.75);
@@ -465,7 +493,7 @@ button, input, select, textarea {
 /* Mobile improvements */
 @media (max-width: 768px) {
   .main {
-    padding: 10px;
+    padding: 8px;
   }
   .page,
   .card {
@@ -477,7 +505,7 @@ button, input, select, textarea {
   .topbar {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 8px;
   }
   .pageTitle {
     font-size: 1.25rem;
@@ -486,45 +514,47 @@ button, input, select, textarea {
     max-width: 100%;
     margin: 0;
     border: 1px solid rgba(255, 255, 255, 0.10);
-    border-radius: 12px;
+    border-radius: 8px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
   .table {
-    min-width: 640px;
+    min-width: 600px;
     width: 100%;
   }
   .table th,
   .table td {
-    padding: 8px 10px;
-    font-size: 0.82rem;
+    padding: 6px 8px;
+    font-size: 0.8rem;
     border-bottom: 1px solid rgba(255,255,255,0.10);
     white-space: nowrap;
   }
   .table th {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     letter-spacing: 0.02em;
   }
   .card {
-    padding: 12px;
+    padding: 10px;
+    margin-bottom: 8px;
   }
   .btn,
   .btnSm,
   .input,
   .select,
   .selectSm {
-    min-height: 42px;
+    min-height: 40px;
+    font-size: 0.9rem;
   }
   .paginationRow {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: 6px;
     justify-content: flex-start;
   }
   .paginationRow > div {
     width: 100%;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
   }
   .paginationRow span,
   .paginationRow button {
@@ -535,6 +565,16 @@ button, input, select, textarea {
   }
   .paginationRow select {
     width: 100px;
+  }
+  .grid2, .grid3 {
+    gap: 6px;
+  }
+  .cardTitle {
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+  .statValue {
+    font-size: 1.2rem;
   }
 }
 
@@ -596,12 +636,58 @@ button, input, select, textarea {
   .pageHeader { flex-direction: column; align-items: stretch; }
   .cardHeader { flex-direction: column; align-items: stretch; }
   .filterRow { width: 100%; }
-  .table th, .table td { padding: 8px 6px; font-size: 0.9375rem; word-break: break-word; }
-  .actionGroupWrap { flex-direction: row; flex-wrap: wrap; gap: 8px; }
-  .colActions { min-width: 200px; }
-  .main { padding: 8px; }
-  .modalContent { padding: 20px; max-height: 85vh; }
-  .modalOverlay { padding: 12px; }
+  .table th, .table td { 
+    padding: 6px 8px; 
+    font-size: 0.85rem; 
+    word-break: break-word; 
+    white-space: nowrap;
+  }
+  .actionGroupWrap { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  .cardSection { margin-bottom: 12px; }
+  .sectionGap { height: 12px; }
+}
+
+/* Extra small mobile screens */
+@media (max-width: 480px) {
+  .main {
+    padding: 4px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .card {
+    padding: 8px;
+    margin-bottom: 6px;
+  }
+  .pageHeader {
+    margin-bottom: 12px;
+  }
+  .pageTitle {
+    font-size: 1.1rem;
+  }
+  .cardTitle {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+  .statValue {
+    font-size: 1.1rem;
+  }
+  .table th,
+  .table td {
+    padding: 4px 6px;
+    font-size: 0.75rem;
+  }
+  .table th {
+    font-size: 0.65rem;
+  }
+  .btn {
+    padding: 8px 12px;
+    min-height: 36px;
+    font-size: 0.85rem;
+  }
+  .pill {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
 }
 
 /* Auth pages */
