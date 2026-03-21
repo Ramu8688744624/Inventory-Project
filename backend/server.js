@@ -42,7 +42,11 @@ app.use(
   })
 );
 
-app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('/health', (req, res) => {
+  // eslint-disable-next-line no-console
+  console.log(`Health check hit at ${new Date().toISOString()}`);
+  res.status(200).send('OK');
+});
 
 app.use((req, res, next) => {
   req.user = { id: 1, shop_id: 1, role: 'admin' };
@@ -186,6 +190,37 @@ async function start() {
   app.listen(PORT, () => {
     // eslint-disable-next-line no-console
     console.log(`Backend running on port ${PORT}${allowedOrigin ? ' with CORS=' + allowedOrigin : ''}`);
+
+    // Keep-alive mechanism for Render free tier
+    if (process.env.NODE_ENV === 'production' && process.env.BASE_URL) {
+      const https = require('https');
+      const keepAliveInterval = setInterval(() => {
+        const url = `${process.env.BASE_URL}/health`;
+        // eslint-disable-next-line no-console
+        console.log(`Sending keep-alive ping to ${url}`);
+
+        https.get(url, (res) => {
+          // eslint-disable-next-line no-console
+          console.log(`Keep-alive ping successful: ${res.statusCode}`);
+        }).on('error', (err) => {
+          // eslint-disable-next-line no-console
+          console.error('Keep-alive ping failed:', err.message);
+        });
+      }, 5 * 60 * 1000); // 5 minutes
+
+      // eslint-disable-next-line no-console
+      console.log('Keep-alive mechanism activated - pinging every 5 minutes');
+
+      // Cleanup on process exit
+      process.on('SIGINT', () => {
+        clearInterval(keepAliveInterval);
+        process.exit(0);
+      });
+      process.on('SIGTERM', () => {
+        clearInterval(keepAliveInterval);
+        process.exit(0);
+      });
+    }
   });
 }
 
