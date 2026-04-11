@@ -8,6 +8,7 @@ import PromptDialog from '../components/PromptDialog'
 import AlertDialog from '../components/AlertDialog'
 import EditPricesModal from '../components/EditPricesModal'
 import PaginationControls from '../components/PaginationControls'
+import CustomSelect from '../components/CustomSelect'
 
 export default function InventoryPage() {
   const setToast = useToast()
@@ -52,7 +53,7 @@ export default function InventoryPage() {
 
   const loadCategories = () =>
     api
-      .get('/categories')
+      .get('/categories', { params: { pageSize: 1000 } })
       .then((res) => setCategories(res.data?.data || []))
       .catch((e) => setToast(getErrorMessage(e)))
 
@@ -248,19 +249,13 @@ export default function InventoryPage() {
             <label className="formLabel" htmlFor="inv-cat">
               Category
             </label>
-            <select
+            <CustomSelect
               id="inv-cat"
-              className="select"
               value={form.category_id}
               onChange={(e) => setForm((p) => ({ ...p, category_id: e.target.value }))}
-            >
-              <option value="">Select category</option>
-              {categoryOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              options={categoryOptions}
+              placeholder="Select category"
+            />
           </div>
           <div className="formField">
             <label className="formLabel" htmlFor="inv-name">
