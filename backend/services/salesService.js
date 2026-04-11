@@ -153,6 +153,117 @@ async function listSales(shopId, { filter, from, to, limit = 200 } = {}) {
   });
 }
 
+async function deleteSale(shopId, saleId, userId = null) {
+  return sequelize.transaction(async (t) => {
+    const sale = await Sale.findOne(
+      { where: { id: saleId, shop_id: shopId } },
+      { transaction: t, lock: t.LOCK.UPDATE }
+    );
+    if (!sale) throw new AppError('Sale not found.', 404);
+
+    // Get all sale items to restore stock
+    const saleItems = await SaleItem.findAll(
+      { where: { sale_id: saleId, shop_id: shopId } },
+      { transaction: t }
+    );
+
+    // Restore stock and create stock movements
+    for (const saleItem of saleItems) {
+      const item = await Item.findByPk(saleItem.item_id, { transaction: t, lock: t.LOCK.UPDATE });
+      if (item) {
+        item.quantity += saleItem.quantity;
+        await item.save({ transaction: t });
+        await StockMovement.create(
+          {
+            shop_id: shopId,
+            item_id: saleItem.item_id,
+            movement_type: 'IN',
+            quantity_delta: saleItem.quantity,
+            note: `Sale #${saleId} deletion reversal`,
+          },
+          { transaction: t }
+        );
+      }
+    }
+
+    // Create history record with DELETE operation and store all sale data
+    const saleDataSnapshot = {
+      id: sale.id,
+      shop_id: sale.shop_id,
+      sold_at: sale.sold_at,
+      total_amount: sale.total_amount,
+      total_profit: sale.total_profit,
+      items: saleItems.map((si) => ({
+        id: si.id,
+        item_id: si.item_id,
+        item_name_snapshot: si.item_name_snapshot,
+        model_snapshot: si.model_snapshot,
+        category_name_snapshot: si.category_name_snapshot,
+        quantity: si.quantity,
+        cost_price_at_sale: si.cost_price_at_sale,
+        selling_price_each: si.selling_price_each,
+        profit_each: si.profit_each,
+        line_total: si.line_total,
+        line_profit: si.line_profit,
+      })),
+    };
+
+    await SaleHistory.create(
+      {
+        original_id: sale.id,
+        shop_id: shopId,
+        user_id: userId,
+        operation_type: 'DELETE',
+        data_snapshot: JSON.stringify(saleDataSnapshot),
+        created_at: new Date(),
+      },
+      { transaction: t }
+    );
+
+    // Delete sale items and sale
+    await SaleItem.destroy({ where: { sale_id: saleId }, transaction: t });
+    await Sale.destroy({ where: { id: saleId }, transaction: t });
+
+    return { success: true, message: 'Sale deleted and backed up.' };
+  });
+}
+
+async function listDeletedSalesHistory(shopId, { limit = 200, offset = 0 } = {}) {
+  const results = await SaleHistory.findAndCountAll({
+    where: { shop_id: shopId, operation_type: 'DELETE' },
+    order: [['created_at', 'DESC']],
+    limit: Math.min(Number(limit) || 200, 1000),
+    offset: Math.max(0, Number(offset) || 0),
+  });
+
+  return {
+    data: results.rows.map((h) => {
+      let dataSnapshot = {};
+      try {
+        dataSnapshot = JSON.parse(h.data_snapshot);
+      } catch {
+        // If parse fails, use empty snapshot
+      }
+      return {
+        id: h.id,
+        original_id: h.original_id,
+        deleted_at: h.created_at,
+        sale_data: dataSnapshot,
+      };
+    }),
+    count: results.count,
+  };
+}
+
+async function hardDeleteSaleHistory(shopId, historyId) {
+  const history = await SaleHistory.findOne({
+    where: { id: historyId, shop_id: shopId, operation_type: 'DELETE' },
+  });
+  if (!history) throw new AppError('History record not found.', 404);
+  await SaleHistory.destroy({ where: { id: historyId } });
+  return { success: true, message: 'History record permanently deleted.' };
+}
+
 async function itemSalesHistory(shopId, itemId, { limit = 200 } = {}) {
   return SaleItem.findAll({
     where: { shop_id: shopId, item_id: itemId },
@@ -167,5 +278,8 @@ module.exports = {
   listSales,
   itemSalesHistory,
   rangeForFilter,
+  deleteSale,
+  listDeletedSalesHistory,
+  hardDeleteSaleHistory,
 };
 

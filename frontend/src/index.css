@@ -343,6 +343,55 @@ button, input, select, textarea {
 .btnSm { padding: 8px 12px; min-height: 40px; font-size: 0.9375rem; }
 .btnFile { cursor: pointer; }
 
+/* Icon buttons - compact, minimal design */
+.btnIcon {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  padding: 6px;
+  min-height: 32px;
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--ease), color var(--ease), border-color var(--ease);
+  flex-shrink: 0;
+}
+.btnIcon:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+.btnIcon:active {
+  transform: scale(0.95);
+}
+.btnIcon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.btnIconDanger {
+  color: rgba(255,77,90,0.7);
+}
+.btnIconDanger:hover {
+  background: rgba(255,77,90,0.15);
+  color: #ff4d5a;
+}
+.btnIconPrimary {
+  color: rgba(79,140,255,0.7);
+}
+.btnIconPrimary:hover {
+  background: rgba(79,140,255,0.15);
+  color: #4f8cff;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;

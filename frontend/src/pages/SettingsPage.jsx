@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { shopConfig, updateShopConfig } from '../services/shopConfig'
+import { api, getErrorMessage } from '../services/api'
+import { shopConfig } from '../services/shopConfig'
+import { updateShopConfig } from '../services/shopConfig'
 import { useToast } from '../components/useToast'
 
 export default function SettingsPage() {
@@ -38,6 +40,9 @@ export default function SettingsPage() {
     loadColumns('profit_item_columns', ['item', 'qty', 'sales', 'profit'])
   )
 
+  const [deletedSalesHistory, setDeletedSalesHistory] = useState([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
   useEffect(() => {
     const savedShop = localStorage.getItem('shop_config')
     if (savedShop) {
@@ -67,6 +72,7 @@ export default function SettingsPage() {
 
   const saveColumns = (key, columns, message) => {
     localStorage.setItem(key, JSON.stringify(columns))
+    window.dispatchEvent(new Event('storage'))
     setToast(message)
   }
 
@@ -75,6 +81,29 @@ export default function SettingsPage() {
   const saveSalesColumns = () => saveColumns('sales_history_columns', salesColumns, 'Sales history columns saved')
   const saveProfitCategoryColumns = () => saveColumns('profit_category_columns', profitCategoryColumns, 'Profit category columns saved')
   const saveProfitItemColumns = () => saveColumns('profit_item_columns', profitItemColumns, 'Profit item columns saved')
+
+  const loadDeletedSalesHistory = async () => {
+    setLoadingHistory(true)
+    try {
+      const res = await api.get('/sales/history/deleted/list')
+      setDeletedSalesHistory(res.data?.data || [])
+    } catch (e) {
+      setToast(getErrorMessage(e))
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  const hardDeleteHistory = async (historyId) => {
+    if (!window.confirm('Permanently delete this record?')) return
+    try {
+      await api.delete(`/sales/history/${historyId}/hard-delete`)
+      setToast('History record deleted permanently')
+      loadDeletedSalesHistory()
+    } catch (e) {
+      setToast(getErrorMessage(e))
+    }
+  }
 
   return (
     <div className="page">
@@ -322,6 +351,55 @@ export default function SettingsPage() {
         >
           Reset Application Data
         </button>
+      </section>
+
+      <section className="card cardSection">
+        <div className="cardTitle">Deleted Sales History</div>
+        <p className="muted">View and permanently delete backed-up sales records.</p>
+        <button className="btn btnPrimary" onClick={loadDeletedSalesHistory} disabled={loadingHistory}>
+          {loadingHistory ? 'Loading...' : 'Load deleted sales'}
+        </button>
+
+        {deletedSalesHistory.length > 0 && (
+          <div className="tableWrap" style={{ marginTop: 16 }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Sale ID</th>
+                  <th>Deleted Date</th>
+                  <th>Amount</th>
+                  <th>Items</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deletedSalesHistory.map((h) => (
+                  <tr key={h.id}>
+                    <td>#{h.original_id}</td>
+                    <td className="muted">{new Date(h.deleted_at).toLocaleString()}</td>
+                    <td>{shopConfig.currencySymbol}{Number(h.sale_data?.total_amount || 0).toFixed(2)}</td>
+                    <td>{h.sale_data?.items?.length || 0}</td>
+                    <td>
+                      <button
+                        className="btnIcon btnIconDanger"
+                        onClick={() => hardDeleteHistory(h.id)}
+                        title="Permanently delete"
+                        aria-label="Permanently delete"
+                      >
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {deletedSalesHistory.length === 0 && !loadingHistory && (
+          <p className="muted" style={{ marginTop: 12 }}>
+            No deleted sales history found.
+          </p>
+        )}
       </section>
     </div>
   )

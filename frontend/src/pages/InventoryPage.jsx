@@ -212,10 +212,10 @@ export default function InventoryPage() {
           <p className="pageSubtitle">Add items, update prices, add stock, Excel import/export</p>
         </div>
         <div className="actionGroup">
-          <button className="btn" onClick={exportInventory}>
-            Export Excel
+          <button className="btnIcon btnIconPrimary" onClick={exportInventory} title="Export Excel" aria-label="Export inventory to Excel">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </button>
-          <button className="btn" onClick={async () => {
+          <button className="btnIcon btnIconPrimary" onClick={async () => {
             try {
               const res = await api.get('/excel/export/inventory-template', { responseType: 'blob' })
               downloadBlob(res.data, 'inventory-template.xlsx')
@@ -223,11 +223,11 @@ export default function InventoryPage() {
             } catch (e) {
               setToast(getErrorMessage(e))
             }
-          }}>
-            Download inventory template
+          }} title="Download inventory template" aria-label="Download inventory template">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </button>
-          <label className="btn btnFile">
-            Import Excel
+          <label className="btnIcon btnIconPrimary" title="Import Excel" style={{cursor: 'pointer'}}>
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             <input
               type="file"
               accept=".xlsx"
@@ -355,8 +355,8 @@ export default function InventoryPage() {
               placeholder="Filter by item/model"
               aria-label="Search items"
             />
-            <button className="btn btnSm" onClick={loadItems}>
-              Refresh
+            <button className="btnIcon" onClick={loadItems} title="Refresh" aria-label="Refresh items list">
+              <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36M20.49 15a9 9 0 0 1-14.85 3.36"/></svg>
             </button>
           </div>
         </div>
@@ -397,17 +397,17 @@ export default function InventoryPage() {
                   {visibleColumns.includes('actions') && (
                     <td>
                       <div className="actionGroup actionGroupWrap">
-                        <button className="btn btnSm" onClick={() => addStock(it)}>
-                          Add stock
+                        <button className="btnIcon" onClick={() => addStock(it)} title="Add stock" aria-label="Add stock">
+                          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         </button>
-                        <button className="btn btnSm" onClick={() => editItem(it)}>
-                          Edit prices
+                        <button className="btnIcon" onClick={() => editItem(it)} title="Edit prices" aria-label="Edit prices">
+                          <svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3"/></svg>
                         </button>
-                        <button className="btn btnSm" onClick={() => viewItemSales(it)}>
-                          Item sales
+                        <button className="btnIcon" onClick={() => viewItemSales(it)} title="Item sales" aria-label="View item sales">
+                          <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><polyline points="18 9 12 15 9 12 3 18"/></svg>
                         </button>
-                        <button className="btn btnSm btnDanger" onClick={() => removeItem(it)}>
-                          Delete
+                        <button className="btnIcon btnIconDanger" onClick={() => removeItem(it)} title="Delete" aria-label="Delete item">
+                          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                       </div>
                     </td>
