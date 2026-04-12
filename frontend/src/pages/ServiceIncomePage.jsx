@@ -13,6 +13,7 @@ export default function ServiceIncomePage() {
   const [rows, setRows] = useState([])
   const [form, setForm] = useState({ service_name: '', amount: '', service_date: ymd(new Date()), notes: '' })
   const [saving, setSaving] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState({ open: false, row: null })
 
   const money = (v) => `${shopConfig.currencySymbol}${Number(v || 0).toFixed(2)}`
@@ -27,18 +28,45 @@ export default function ServiceIncomePage() {
     load()
   }, [])
 
-  const add = async () => {
+  const resetForm = () => {
+    setForm({ service_name: '', amount: '', service_date: ymd(new Date()), notes: '' })
+    setEditingId(null)
+  }
+
+  const edit = (row) => {
+    setForm({
+      service_name: row.service_name,
+      amount: String(row.amount),
+      service_date: row.service_date,
+      notes: row.notes || '',
+    })
+    setEditingId(row.id)
+  }
+
+  const save = async () => {
     setSaving(true)
     try {
-      await api.post('/services', {
-        service_name: form.service_name,
-        amount: Number(form.amount),
-        service_date: form.service_date,
-        notes: form.notes || null,
-      })
-      setForm({ service_name: '', amount: '', service_date: ymd(new Date()), notes: '' })
+      if (editingId) {
+        // Update existing
+        await api.put(`/services/${editingId}`, {
+          service_name: form.service_name,
+          amount: Number(form.amount),
+          service_date: form.service_date,
+          notes: form.notes || null,
+        })
+        setToast('Service income updated')
+      } else {
+        // Add new
+        await api.post('/services', {
+          service_name: form.service_name,
+          amount: Number(form.amount),
+          service_date: form.service_date,
+          notes: form.notes || null,
+        })
+        setToast('Service income saved')
+      }
+      resetForm()
       await load()
-      setToast('Service income saved')
     } catch (e) {
       setToast(getErrorMessage(e))
     } finally {
@@ -56,6 +84,7 @@ export default function ServiceIncomePage() {
       await api.delete(`/services/${confirmDelete.row.id}`)
       await load()
       setToast('Deleted')
+      setConfirmDelete({ open: false, row: null })
     } catch (e) {
       setToast(getErrorMessage(e))
     }
@@ -74,7 +103,7 @@ export default function ServiceIncomePage() {
       </header>
 
       <section className="card cardSection">
-        <h2 className="cardTitle">Add service income</h2>
+        <h2 className="cardTitle">{editingId ? 'Edit service income' : 'Add service income'}</h2>
         <div className="formGrid formGrid3">
           <div className="formField">
             <label className="formLabel" htmlFor="svc-name">
@@ -126,9 +155,16 @@ export default function ServiceIncomePage() {
             placeholder="Optional notes"
           />
         </div>
-        <button className="btn btnPrimary" onClick={add} disabled={saving}>
-          Save
-        </button>
+        <div className="actionGroup">
+          <button className="btn btnPrimary" onClick={save} disabled={saving}>
+            {editingId ? 'Update' : 'Save'}
+          </button>
+          {editingId && (
+            <button className="btn" onClick={resetForm} disabled={saving}>
+              Cancel
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="card cardSection">
@@ -152,9 +188,14 @@ export default function ServiceIncomePage() {
                   <td>{money(r.amount)}</td>
                   <td className="muted">{r.notes || ''}</td>
                   <td>
-                    <button className="btn btnSm btnDanger" onClick={() => remove(r)} aria-label={`Delete ${r.service_name}`}>
-                      Delete
-                    </button>
+                    <div className="actionGroup actionGroupWrap">
+                      <button className="btnIcon" onClick={() => edit(r)} title="Edit" aria-label={`Edit ${r.service_name}`}>
+                        <svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3"/></svg>
+                      </button>
+                      <button className="btnIcon btnIconDanger" onClick={() => remove(r)} title="Delete" aria-label={`Delete ${r.service_name}`}>
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -335,19 +335,16 @@ export default function InventoryPage() {
         <div className="cardHeader">
           <h2 className="cardTitle">Item list</h2>
           <div className="filterRow">
-            <select
-              className="select selectSm"
+            <CustomSelect
               value={filterCategoryId}
               onChange={(e) => setFilterCategoryId(e.target.value)}
-              aria-label="Filter by category"
-            >
-              <option value="">All categories</option>
-              {categoryOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { id: '', name: 'All categories' },
+                ...categoryOptions,
+              ]}
+              placeholder="Select category"
+              className="selectSm"
+            />
             <input
               className="input inputSm"
               value={q}

@@ -37,22 +37,23 @@ export default function CustomSelect({
 
     const rect = triggerRef.current.getBoundingClientRect()
     const isMobile = window.innerWidth <= 640
+    const viewportHeight = window.innerHeight
     
     if (isMobile) {
-      // Mobile: bottom sheet with limited height (max 35vh)
-      // Position from bottom with some padding
+      // Mobile: position below trigger, capped to viewport height
+      const spaceBelow = viewportHeight - rect.bottom
+      const maxHeightPx = Math.max(150, spaceBelow - 10) // Min 150px, max is space below
+      
       setMenuPosition({
-        top: 'auto',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        width: 'auto',
-        height: '35vh',
+        top: rect.bottom + 6,
+        left: rect.left,
+        right: window.innerWidth - rect.right,
+        width: rect.width,
+        maxHeight: `${maxHeightPx}px`,
         isMobile: true,
       })
     } else {
-      // Desktop: position below trigger, with room to scroll
-      const viewportHeight = window.innerHeight
+      // Desktop: position below trigger with smart direction
       const spaceBelow = viewportHeight - rect.bottom
       const menuHeight = Math.min(320, filteredOptions.length * 44 + (filteredOptions.length > 5 ? 50 : 0))
       
@@ -87,21 +88,14 @@ export default function CustomSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
 
-  // Lock body scroll on mobile when dropdown is open
+  // Lock body scroll on mobile when dropdown is open (optional, for better UX)
   useEffect(() => {
-    const isMobile = window.innerWidth <= 640
-    if (isOpen && isMobile) {
-      // Lock scroll using html element (more reliable)
-      document.documentElement.style.overflow = 'hidden'
-      document.documentElement.style.height = '100%'
+    if (isOpen) {
+      // Prevent body scroll while dropdown is active to avoid accidental page scroll
       document.body.style.overflow = 'hidden'
-      document.body.style.height = '100%'
       
       return () => {
-        document.documentElement.style.overflow = ''
-        document.documentElement.style.height = ''
         document.body.style.overflow = ''
-        document.body.style.height = ''
       }
     }
   }, [isOpen])
@@ -188,33 +182,17 @@ export default function CustomSelect({
       {/* Dropdown Menu - Using Portal-like positioning with fixed */}
       {isOpen && (
         <>
-          {/* Mobile backdrop */}
-          {menuPosition.isMobile && (
-            <div
-              className="customSelectBackdrop"
-              onClick={() => setIsOpen(false)}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                zIndex: 9999,
-              }}
-            />
-          )}
           <div
             ref={menuRef}
             className={`customSelectMenu ${menuPosition.isMobile ? 'mobile' : 'desktop'}`}
             style={{
               position: 'fixed',
-              top: menuPosition.isMobile ? 'auto' : menuPosition.top,
-              bottom: menuPosition.isMobile ? 0 : 'auto',
-              left: menuPosition.isMobile ? 0 : menuPosition.left,
-              width: menuPosition.isMobile ? '100%' : menuPosition.width,
-              right: menuPosition.isMobile ? 0 : 'auto',
+              top: menuPosition.top,
+              left: menuPosition.left,
+              right: menuPosition.isMobile ? menuPosition.right : 'auto',
+              width: menuPosition.width,
               height: menuPosition.height,
+              maxHeight: menuPosition.maxHeight || 'auto',
             }}
             role="listbox"
           >

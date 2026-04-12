@@ -181,16 +181,6 @@ export default function AppLayout() {
             <button className="btn btnPrimary" onClick={() => navigate('/sales-pos')}>
               New Sale
             </button>
-            <button
-              className="btn btnDanger"
-              onClick={() => {
-                localStorage.clear()
-                sessionStorage.clear()
-                window.location.reload()
-              }}
-            >
-              Reset Application Data
-            </button>
           </div>
         </div>
 

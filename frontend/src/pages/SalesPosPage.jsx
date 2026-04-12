@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { api, getErrorMessage } from '../services/api'
 import { shopConfig } from '../services/shopConfig'
 import { useToast } from '../components/useToast'
+import CustomSelect from '../components/CustomSelect'
 
 export default function SalesPosPage() {
   const setToast = useToast()
@@ -166,19 +167,16 @@ export default function SalesPosPage() {
         <section className="card cardSection">
           <h2 className="cardTitle">1) Search item</h2>
           <div className="filterRow">
-            <select
-              className="select selectSm"
+            <CustomSelect
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              aria-label="Filter by category"
-            >
-              <option value="">All categories</option>
-              {categoryOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { id: '', name: 'All categories' },
+                ...categoryOptions,
+              ]}
+              placeholder="Select category"
+              className="selectSm"
+            />
             <input
               className="input"
               value={search}

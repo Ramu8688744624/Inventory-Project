@@ -26,5 +26,12 @@ const remove = wrap(async (req, res) => {
   res.json({ data });
 });
 
-module.exports = { create, list, remove };
+const update = wrap(async (req, res) => {
+  const shopId = getShopId(req);
+  const id = Number(req.params.id);
+  const data = await svc.updateServiceIncome(shopId, id, req.body, req.userId);
+  res.json({ data });
+});
+
+module.exports = { create, list, remove, update };
 

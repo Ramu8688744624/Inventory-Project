@@ -581,21 +581,19 @@ button, input, select, textarea {
   flex-shrink: 0;
 }
 
-/* Mobile responsive - bottom sheet style with limited height */
+/* Mobile responsive - dropdown appears below trigger like desktop */
 @media (max-width: 640px) {
   .customSelectMenu.mobile {
-    max-height: 35vh !important;
-    height: 35vh !important;
-    border-radius: 16px 16px 0 0;
-    border-bottom: none;
+    border-radius: 12px;
+    max-height: 60vh;
   }
 
   .customSelectMenu.mobile .customSelectSearch {
-    border-radius: 16px 16px 0 0;
+    border-radius: 12px 12px 0 0;
   }
 
   .customSelectMenu.mobile .customSelectOptions {
-    max-height: calc(35vh - 50px) !important;
+    max-height: calc(60vh - 50px);
   }
 }
 

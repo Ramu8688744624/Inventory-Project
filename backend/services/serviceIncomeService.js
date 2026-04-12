@@ -73,5 +73,39 @@ async function deleteServiceIncome(shopId, id, userId = null) {
   return { ok: true };
 }
 
-module.exports = { createServiceIncome, listServiceIncome, deleteServiceIncome };
+async function updateServiceIncome(shopId, id, payload, userId = null) {
+  const row = await ServiceIncome.findOne({ where: { id, shop_id: shopId } });
+  if (!row) throw new AppError('Service income not found.', 404);
+
+  const service_name = String(payload.service_name || '').trim();
+  const amount = Number(payload.amount);
+  const service_date = payload.service_date ? String(payload.service_date) : null;
+  const notes = payload.notes === undefined ? null : String(payload.notes);
+
+  if (!service_name) throw new AppError('service_name is required.', 400);
+  if (!Number.isFinite(amount) || amount <= 0) throw new AppError('amount must be > 0.', 400);
+  if (!service_date) throw new AppError('service_date is required (YYYY-MM-DD).', 400);
+
+  await row.update({ service_name, amount, service_date, notes });
+
+  await ServiceIncomeHistory.create({
+    original_id: row.id,
+    shop_id: shopId,
+    user_id: userId,
+    operation_type: 'UPDATE',
+    data_snapshot: JSON.stringify({
+      id: row.id,
+      shop_id: shopId,
+      service_name: row.service_name,
+      amount: row.amount,
+      service_date: row.service_date,
+      notes: row.notes,
+    }),
+    created_at: new Date(),
+  });
+
+  return row;
+}
+
+module.exports = { createServiceIncome, listServiceIncome, deleteServiceIncome, updateServiceIncome };
 
